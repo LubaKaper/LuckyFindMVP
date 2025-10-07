@@ -34,8 +34,14 @@ import { colors, commonStyles, spacing, typography } from '../styles/theme';
  * Main SearchScreen functional component
  */
 const SearchScreen = () => {
-  // Search query state
+    // Main search query state (backward compatible naming)
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Pagination state
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    itemsPerPage: 50,
+  });
   
   // Loading state for API calls
   const [isLoading, setIsLoading] = useState(false);
@@ -220,20 +226,20 @@ const SearchScreen = () => {
       // Start loading state
       setIsLoading(true);
       
-      // Prepare search parameters
+      // Prepare search parameters (normalized schema)
       const searchParams = {
-        searchQuery: searchQuery.trim(),
+        searchQuery: searchQuery.trim(),  // Will migrate to 'searchText'
         genre: filters.genre,
         style: filters.style,
         artist: filters.artist,
         label: filters.label,
         country: filters.country,
-        yearFrom: filters.yearFrom,
-        yearTo: filters.yearTo,
-        priceMin: filters.minPrice, // Note: Discogs doesn't support price filtering
-        priceMax: filters.maxPrice, // Note: Discogs doesn't support price filtering
-        page: 1,
-        per_page: 50,
+        yearFrom: parseInt(filters.yearFrom) || null,
+        yearTo: parseInt(filters.yearTo) || null,
+        priceMin: parseInt(filters.minPrice) || null, // Note: Discogs doesn't support price filtering
+        priceMax: parseInt(filters.maxPrice) || null, // Note: Discogs doesn't support price filtering
+        page: pagination.currentPage,
+        per_page: pagination.itemsPerPage,
       };
       
       console.log('🔍 Searching Discogs with parameters:', searchParams);

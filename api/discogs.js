@@ -12,10 +12,12 @@
  * - Comprehensive search with multiple filters
  * - Rate limiting and error handling
  * - Mock data support for development
+ * - Normalized data schema with backward compatibility
  */
 
 import Constants from 'expo-constants';
 import { isAuthenticated, makeAuthenticatedRequest } from './oauth';
+import { RecordTypes } from '../types/Record.js';
 
 // Discogs API configuration
 const DISCOGS_BASE_URL = 'https://api.discogs.com';
@@ -115,37 +117,47 @@ const buildYearFilter = (yearFrom, yearTo) => {
 /**
  * Transform Discogs API search result to our app format
  * @param {Object} discogsResult - Raw result from Discogs API
- * @returns {Object} - Transformed result for our app
+ * @returns {Record} - Normalized record object
  */
 const transformSearchResult = (discogsResult) => {
   return {
+    // Core identification
     id: discogsResult.id,
     type: discogsResult.type,
     title: discogsResult.title,
     artist: extractArtistFromTitle(discogsResult.title),
+    year: parseInt(discogsResult.year) || 0,
+    
+    // Normalized arrays (primary schema)
+    genres: discogsResult.genre || [],
+    styles: discogsResult.style || [],
+    formats: discogsResult.format || [],
+    
+    // Normalized strings  
+    label: discogsResult.label ? discogsResult.label[0] || '' : '',
+    country: discogsResult.country || '',
+    imageUrl: discogsResult.thumb || discogsResult.cover_image || '',
+    resourceUrl: discogsResult.resource_url || '',
+    
+    // New schema fields
+    labelReleaseCount: 0, // Will be fetched separately if needed
+    price: null,          // Not available in search results
+    tracklist: [],        // Will be fetched in detail view
+    
+    // Backward compatibility fields (deprecated but maintained)
     album: extractAlbumFromTitle(discogsResult.title),
-    year: discogsResult.year,
     thumb: discogsResult.thumb,
     cover_image: discogsResult.cover_image,
     resource_url: discogsResult.resource_url,
     uri: discogsResult.uri,
     
-    // Format information
+    // Legacy string versions (for existing UI components)
     format: discogsResult.format ? discogsResult.format.join(', ') : '',
-    formats: discogsResult.format || [],
-    
-    // Label information
-    label: discogsResult.label ? discogsResult.label.join(', ') : '',
     labels: discogsResult.label || [],
-    
-    // Genre and style information
     genre: discogsResult.genre ? discogsResult.genre.join(', ') : '',
-    genres: discogsResult.genre || [],
     style: discogsResult.style ? discogsResult.style.join(', ') : '',
-    styles: discogsResult.style || [],
     
     // Additional metadata
-    country: discogsResult.country,
     catno: discogsResult.catno,
     barcode: discogsResult.barcode,
     
@@ -675,66 +687,90 @@ export const mockSearchResults = {
   },
   results: [
     {
+      // Normalized schema fields (primary)
       id: 1,
-      type: 'release',
       title: 'The Beatles - Abbey Road',
       artist: 'The Beatles',
+      year: 1969,
+      genres: ['Rock'],
+      styles: ['Pop Rock'],
+      formats: ['Vinyl', 'LP', 'Album'],
+      label: 'Apple Records',
+      country: 'UK',
+      imageUrl: 'https://via.placeholder.com/150x150/D2B48C/000000?text=Abbey+Road',
+      resourceUrl: 'https://api.discogs.com/releases/1',
+      labelReleaseCount: 127,
+      price: null,
+      tracklist: [],
+      
+      // Backward compatibility fields (deprecated)
+      type: 'release',
       album: 'Abbey Road',
       thumb: 'https://via.placeholder.com/150x150/D2B48C/000000?text=Abbey+Road',
       cover_image: 'https://via.placeholder.com/500x500/D2B48C/000000?text=Abbey+Road',
       resource_url: 'https://api.discogs.com/releases/1',
-      year: '1969',
       format: 'Vinyl, LP, Album',
-      formats: ['Vinyl', 'LP', 'Album'],
-      label: 'Apple Records',
       labels: ['Apple Records'],
       genre: 'Rock',
-      genres: ['Rock'],
       style: 'Pop Rock',
-      styles: ['Pop Rock'],
-      country: 'UK',
       community: { want: 1500, have: 3200 },
     },
     {
+      // Normalized schema fields (primary)
       id: 2,
-      type: 'release',
       title: 'Pink Floyd - The Dark Side of the Moon',
       artist: 'Pink Floyd',
+      year: 1973,
+      genres: ['Rock'],
+      styles: ['Progressive Rock'],
+      formats: ['Vinyl', 'LP', 'Album'],
+      label: 'Harvest',
+      country: 'UK',
+      imageUrl: 'https://via.placeholder.com/150x150/D2B48C/000000?text=Dark+Side',
+      resourceUrl: 'https://api.discogs.com/releases/2',
+      labelReleaseCount: 89,
+      price: null,
+      tracklist: [],
+      
+      // Backward compatibility fields (deprecated)
+      type: 'release',
       album: 'The Dark Side of the Moon',
       thumb: 'https://via.placeholder.com/150x150/D2B48C/000000?text=Dark+Side',
       cover_image: 'https://via.placeholder.com/500x500/D2B48C/000000?text=Dark+Side',
       resource_url: 'https://api.discogs.com/releases/2',
-      year: '1973',
       format: 'Vinyl, LP, Album',
-      formats: ['Vinyl', 'LP', 'Album'],
-      label: 'Harvest',
       labels: ['Harvest'],
       genre: 'Rock',
-      genres: ['Rock'],
       style: 'Progressive Rock',
-      styles: ['Progressive Rock'],
-      country: 'UK',
       community: { want: 2100, have: 4800 },
     },
     {
+      // Normalized schema fields (primary)
       id: 3,
-      type: 'release',
       title: 'Led Zeppelin - Led Zeppelin IV',
       artist: 'Led Zeppelin',
+      year: 1971,
+      genres: ['Rock'],
+      styles: ['Hard Rock'],
+      formats: ['Vinyl', 'LP', 'Album'],
+      label: 'Atlantic',
+      country: 'US',
+      imageUrl: 'https://via.placeholder.com/150x150/D2B48C/000000?text=Led+Zep+IV',
+      resourceUrl: 'https://api.discogs.com/releases/3',
+      labelReleaseCount: 234,
+      price: null,
+      tracklist: [],
+      
+      // Backward compatibility fields (deprecated)
+      type: 'release',
       album: 'Led Zeppelin IV',
       thumb: 'https://via.placeholder.com/150x150/D2B48C/000000?text=Led+Zep+IV',
       cover_image: 'https://via.placeholder.com/500x500/D2B48C/000000?text=Led+Zep+IV',
       resource_url: 'https://api.discogs.com/releases/3',
-      year: '1971',
       format: 'Vinyl, LP, Album',
-      formats: ['Vinyl', 'LP', 'Album'],
-      label: 'Atlantic',
       labels: ['Atlantic'],
       genre: 'Rock',
-      genres: ['Rock'],
       style: 'Hard Rock',
-      styles: ['Hard Rock'],
-      country: 'US',
       community: { want: 1800, have: 2900 },
     },
     {

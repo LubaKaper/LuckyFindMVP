@@ -33,13 +33,17 @@ const SearchResultsScreen = () => {
   const initialQuery = params.searchQuery || '';
   const searchParams = params.searchParams ? JSON.parse(params.searchParams) : {};
   
-  // State management
+  // State management (normalized schema)
   const [results, setResults] = useState(initialResults?.results || []);
   const [pagination, setPagination] = useState(initialResults?.pagination || {});
   const [currentPage, setCurrentPage] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
-  const [searchQuery, setSearchQuery] = useState(initialQuery || '');
+  const [loading, setLoading] = useState(false);  // Normalized name
+  const [isLoading, setIsLoading] = useState(false); // Backward compatibility
+  const [searchQuery, setSearchQuery] = useState(initialQuery || ''); // Will migrate to searchText
   const [error, setError] = useState(null);
+  
+  // Derived state for schema compliance
+  const totalResults = pagination?.items || 0;
 
   // Results per page
   const RESULTS_PER_PAGE = 30;
@@ -69,6 +73,7 @@ const SearchResultsScreen = () => {
     if (!searchQuery.trim()) return;
 
     setIsLoading(true);
+    setLoading(true);   // Keep both in sync
     setError(null);
     setCurrentPage(1);
 
@@ -91,6 +96,7 @@ const SearchResultsScreen = () => {
       setError(err.message);
     } finally {
       setIsLoading(false);
+      setLoading(false);  // Keep both in sync
     }
   };
 
@@ -122,6 +128,7 @@ const SearchResultsScreen = () => {
       setError(err.message);
     } finally {
       setIsLoading(false);
+      setLoading(false);  // Keep both in sync
     }
   };
 
@@ -153,11 +160,11 @@ const SearchResultsScreen = () => {
       onPress={() => handleRecordPress(item)}
       activeOpacity={0.8}
     >
-      {/* Album Art */}
+      {/* Album Art - Use normalized imageUrl first, fallback to legacy */}
       <View style={styles.imageContainer}>
-        {item.thumb ? (
+        {(item.imageUrl || item.thumb) ? (
           <Image
-            source={{ uri: item.thumb }}
+            source={{ uri: item.imageUrl || item.thumb }}
             style={styles.albumImage}
             resizeMode="cover"
           />
@@ -187,10 +194,10 @@ const SearchResultsScreen = () => {
           <Text style={styles.year}>{item.year}</Text>
         )}
         
-        {/* Label */}
-        {item.label && item.label.length > 0 && (
+        {/* Label - Use normalized field first, fallback to legacy */}
+        {(item.label || (item.labels && item.labels.length > 0)) && (
           <Text style={styles.label} numberOfLines={1}>
-            📀 {typeof item.label === 'string' ? item.label : item.label[0]}
+            📀 {item.label || item.labels[0] || ''}
           </Text>
         )}
         
@@ -201,11 +208,14 @@ const SearchResultsScreen = () => {
           </Text>
         )}
         
-        {/* Genre */}
-        {item.genre && (
+        {/* Genre - Use normalized arrays first, fallback to legacy strings */}
+        {((item.genres && item.genres.length > 0) || item.genre) && (
           <View style={styles.genreContainer}>
             <Text style={styles.genreText} numberOfLines={1}>
-              {typeof item.genre === 'string' ? item.genre.split(',')[0] : item.genre}
+              {item.genres && item.genres.length > 0 
+                ? item.genres[0] 
+                : (typeof item.genre === 'string' ? item.genre.split(',')[0] : item.genre)
+              }
             </Text>
           </View>
         )}

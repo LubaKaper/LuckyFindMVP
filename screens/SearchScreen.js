@@ -22,16 +22,20 @@ import {
 } from 'react-native';
 
 // Import custom components
-import { Button, Dropdown, Input } from '../components';
+import { AuthButton, Button, Dropdown, Input, SearchResults } from '../components';
 
 // Import API and theme
-import { mockAdvancedSearch } from '../api/discogs';
+import { advancedSearch } from '../api/discogs';
+import { isAuthenticated } from '../api/oauth';
 import { colors, commonStyles, spacing, typography } from '../styles/theme';
 
 /**
  * Main SearchScreen functional component
  */
 const SearchScreen = () => {
+  // Authentication state
+  const [isAuth, setIsAuth] = useState(false);
+  
   // Search query state
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -53,8 +57,9 @@ const SearchScreen = () => {
     label: '',
   });
   
-  // Search results state (for future implementation)
+  // Search results state
   const [searchResults, setSearchResults] = useState(null);
+  const [searchError, setSearchError] = useState(null);
   
   // Filter options data
   const filterOptions = {
@@ -154,12 +159,26 @@ const SearchScreen = () => {
   
   /**
    * Handle search execution
-   * Validates input and calls API with current search parameters
+   * Validates input and calls Discogs API with current search parameters
    */
   const handleSearch = async () => {
     try {
+      // Validate search query
+      if (!searchQuery.trim()) {
+        Alert.alert(
+          'Search Required',
+          'Please enter a search term to find records.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+
       // Close any open dropdowns
       setOpenDropdown(null);
+      
+      // Clear previous results and errors
+      setSearchResults(null);
+      setSearchError(null);
       
       // Start loading state
       setIsLoading(true);
@@ -173,37 +192,57 @@ const SearchScreen = () => {
         label: filters.label,
         yearFrom: filters.yearFrom,
         yearTo: filters.yearTo,
-        format: filters.style, // Map style to format for API
+        priceMin: filters.minPrice, // Note: Discogs doesn't support price filtering
+        priceMax: filters.maxPrice, // Note: Discogs doesn't support price filtering
         page: 1,
-        perPage: 50,
+        per_page: 50,
       };
       
-      console.log('🔍 Searching with parameters:', searchParams);
+      console.log('🔍 Searching Discogs with parameters:', searchParams);
       
-      // Call API (using mock for now)
-      const results = await mockAdvancedSearch(searchParams);
+      // Call Discogs API
+      const results = await advancedSearch(searchParams);
       
       // Update results state
       setSearchResults(results);
       
-      // Show success message
-      Alert.alert(
-        'Search Complete',
-        `Found ${results.pagination.items} records matching your criteria.`,
-        [{ text: 'OK', style: 'default' }]
-      );
+      console.log(`✅ Search completed successfully. Found ${results.pagination?.items || 0} results`);
       
-      console.log('✅ Search completed successfully:', results);
+      // Show success message for significant results
+      if (results.pagination?.items > 0) {
+        const message = `Found ${results.pagination.items} record${results.pagination.items !== 1 ? 's' : ''} matching your search.`;
+        // Don't show alert, let the UI display the results
+        console.log('📊 Search results:', message);
+      } else {
+        Alert.alert(
+          'No Results',
+          'No records found matching your search criteria. Try adjusting your filters or search terms.',
+          [{ text: 'OK' }]
+        );
+      }
       
     } catch (error) {
       console.error('❌ Search failed:', error.message);
       
-      // Show error message
-      Alert.alert(
-        'Search Error',
-        'Failed to search records. Please check your connection and try again.',
-        [{ text: 'OK', style: 'default' }]
-      );
+      // Set error state for UI display
+      setSearchError(error.message);
+      
+      // Show appropriate error message
+      let errorTitle = 'Search Error';
+      let errorMessage = 'Failed to search records. Please try again.';
+      
+      if (error.message.includes('Authentication')) {
+        errorTitle = 'Authentication Error';
+        errorMessage = 'Please log out and log back in to Discogs.';
+      } else if (error.message.includes('Rate limit')) {
+        errorTitle = 'Too Many Requests';
+        errorMessage = 'Please wait a moment before searching again.';
+      } else if (error.message.includes('Network')) {
+        errorTitle = 'Network Error';
+        errorMessage = 'Please check your internet connection and try again.';
+      }
+      
+      Alert.alert(errorTitle, errorMessage, [{ text: 'OK' }]);
       
     } finally {
       // End loading state
@@ -211,6 +250,19 @@ const SearchScreen = () => {
     }
   };
   
+  /**
+   * Handle authentication state changes
+   * @param {boolean} authenticated - New authentication state
+   */
+  const handleAuthChange = (authenticated) => {
+    setIsAuth(authenticated);
+    if (!authenticated) {
+      // Clear search results when logged out
+      setSearchResults(null);
+      setSearchError(null);
+    }
+  };
+
   /**
    * Reset all filters and search query
    */
@@ -228,6 +280,20 @@ const SearchScreen = () => {
     });
     setOpenDropdown(null);
     setSearchResults(null);
+    setSearchError(null);
+  };
+
+  /**
+   * Handle result item press (for future detail view)
+   */
+  const handleResultItemPress = (item) => {
+    console.log('Selected record:', item);
+    // TODO: Navigate to record detail screen
+    Alert.alert(
+      'Record Details',
+      `${item.title}\n\nThis would open a detailed view of the record.`,
+      [{ text: 'OK' }]
+    );
   };
   
   // Close dropdown when user scrolls
@@ -249,6 +315,23 @@ const SearchScreen = () => {
         {/* Screen Title */}
         <Text style={styles.title}>Search Records</Text>
         
+        {/* Search Description */}
+        <Text style={styles.searchDescription}>
+          Search millions of records in the world's largest music database.
+        </Text>
+        
+        {/* Authentication Section - Hidden for now */}
+        {false && (
+          <View style={styles.authSection}>
+            <AuthButton onAuthChange={handleAuthChange} />
+            {!isAuth && (
+              <Text style={styles.authMessage}>
+                Connect to Discogs to search millions of records in the world's largest music database.
+              </Text>
+            )}
+          </View>
+        )}
+        
         {/* Main Search Input */}
         <Input
           value={searchQuery}
@@ -259,6 +342,14 @@ const SearchScreen = () => {
           autoCorrect={false}
           returnKeyType="search"
           onSubmitEditing={handleSearch}
+        />
+        
+        {/* Search Button */}
+        <Button
+          title={isLoading ? "Searching..." : "Search Records"}
+          onPress={handleSearch}
+          disabled={isLoading || !searchQuery.trim()}
+          style={styles.searchButton}
         />
         
         {/* Filters Section */}
@@ -366,10 +457,10 @@ const SearchScreen = () => {
         <View style={styles.actionButtons}>
           {/* Search Button */}
           <Button
-            title="Search Records"
+            title={isAuth ? "Search Records" : "Login Required"}
             onPress={handleSearch}
             loading={isLoading}
-            disabled={isLoading}
+            disabled={isLoading || !isAuth}
             style={styles.searchButton}
           />
           
@@ -382,16 +473,19 @@ const SearchScreen = () => {
             style={styles.resetButton}
           />
         </View>
-        
-        {/* Results Summary (for future implementation) */}
-        {searchResults && (
-          <View style={styles.resultsSection}>
-            <Text style={styles.resultsText}>
-              Found {searchResults.pagination.items} records
-            </Text>
-          </View>
-        )}
       </ScrollView>
+      
+      {/* Search Results Section */}
+      {(searchResults || isLoading || searchError) && (
+        <View style={styles.resultsContainer}>
+          <SearchResults
+            results={searchResults?.results || []}
+            isLoading={isLoading}
+            error={searchError}
+            onItemPress={handleResultItemPress}
+          />
+        </View>
+      )}
     </View>
   );
 };
@@ -414,7 +508,32 @@ const styles = StyleSheet.create({
   // Title
   title: {
     ...commonStyles.title,
-    marginBottom: spacing.xl, // 24px spacing below title
+    marginBottom: spacing.md, // 12px spacing below title
+  },
+  
+  // Search description
+  searchDescription: {
+    color: colors.textSecondary,
+    fontSize: typography.fontSize.md,
+    textAlign: 'center',
+    marginBottom: spacing.xl, // 24px spacing below description
+    paddingHorizontal: spacing.lg,
+    lineHeight: typography.lineHeight.relaxed * typography.fontSize.md,
+  },
+  
+  // Authentication section
+  authSection: {
+    marginBottom: spacing.xl, // 24px spacing below auth section
+    alignItems: 'center',
+  },
+  
+  authMessage: {
+    color: colors.textSecondary,
+    fontSize: typography.fontSize.sm,
+    textAlign: 'center',
+    marginTop: spacing.md,
+    lineHeight: typography.lineHeight.relaxed * typography.fontSize.sm,
+    paddingHorizontal: spacing.base,
   },
   
   // Filters section
@@ -444,25 +563,18 @@ const styles = StyleSheet.create({
   },
   
   searchButton: {
-    // Primary button styling from Button component
+    marginTop: spacing.lg, // 20px spacing above search button
+    marginBottom: spacing.xl, // 24px spacing below search button
   },
   
   resetButton: {
     // Outline button styling from Button component
   },
   
-  // Results section (for future implementation)
-  resultsSection: {
-    padding: spacing.base,
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: 8,
-    marginBottom: spacing.xl,
-  },
-  
-  resultsText: {
-    ...commonStyles.body,
-    textAlign: 'center',
-    fontWeight: typography.fontWeight.medium,
+  // Results container
+  resultsContainer: {
+    flex: 1,
+    backgroundColor: colors.background,
   },
 });
 

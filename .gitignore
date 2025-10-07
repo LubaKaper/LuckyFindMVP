@@ -32,6 +32,12 @@ yarn-error.*
 
 # local env files
 .env*.local
+.env
+.env.production
+
+# OAuth credentials and sensitive data
+discogs-credentials.json
+oauth-tokens.json
 
 # typescript
 *.tsbuildinfo

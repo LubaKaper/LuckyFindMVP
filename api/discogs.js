@@ -5,13 +5,20 @@
  * API Documentation: https://www.discogs.com/developers/
  * Base URL: https://api.discogs.com/
  * 
- * Note: For production use, you'll need to register for a Discogs API token
- * and implement proper authentication.
+ * Features:
+ * - Public API access (no authentication required)
+ * - OAuth 1.0a authentication (optional for enhanced features)
+ * - Secure credential handling via environment variables
+ * - Comprehensive search with multiple filters
+ * - Rate limiting and error handling
+ * - Mock data support for development
  */
+
+import { makeAuthenticatedRequest, isAuthenticated } from './oauth';
+import Constants from 'expo-constants';
 
 // Discogs API configuration
 const DISCOGS_BASE_URL = 'https://api.discogs.com';
-const API_VERSION = 'v1'; // Current API version
 
 // API endpoints
 const ENDPOINTS = {
@@ -88,23 +95,89 @@ const ENDPOINTS = {
  */
 
 /**
- * Creates the full API URL with parameters
- * @param {string} endpoint - API endpoint
- * @param {SearchParams} params - Search parameters
- * @returns {string} - Complete API URL
+ * Build year filter string for Discogs API
+ * Discogs accepts year ranges in format "1990-1995" or single years "1990"
+ * @param {string} yearFrom - Start year
+ * @param {string} yearTo - End year
+ * @returns {string} - Year filter string
  */
-const buildApiUrl = (endpoint, params = {}) => {
-  const baseUrl = `${DISCOGS_BASE_URL}${endpoint}`;
-  const searchParams = new URLSearchParams();
-  
-  // Add parameters to URL
-  Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== '') {
-      searchParams.append(key, value.toString());
-    }
-  });
-  
-  return `${baseUrl}?${searchParams.toString()}`;
+const buildYearFilter = (yearFrom, yearTo) => {
+  if (yearFrom && yearTo) {
+    return `${yearFrom}-${yearTo}`;
+  } else if (yearFrom) {
+    return yearFrom;
+  } else if (yearTo) {
+    return yearTo;
+  }
+  return '';
+};
+
+/**
+ * Transform Discogs API search result to our app format
+ * @param {Object} discogsResult - Raw result from Discogs API
+ * @returns {Object} - Transformed result for our app
+ */
+const transformSearchResult = (discogsResult) => {
+  return {
+    id: discogsResult.id,
+    type: discogsResult.type,
+    title: discogsResult.title,
+    artist: extractArtistFromTitle(discogsResult.title),
+    album: extractAlbumFromTitle(discogsResult.title),
+    year: discogsResult.year,
+    thumb: discogsResult.thumb,
+    cover_image: discogsResult.cover_image,
+    resource_url: discogsResult.resource_url,
+    uri: discogsResult.uri,
+    
+    // Format information
+    format: discogsResult.format ? discogsResult.format.join(', ') : '',
+    formats: discogsResult.format || [],
+    
+    // Label information
+    label: discogsResult.label ? discogsResult.label.join(', ') : '',
+    labels: discogsResult.label || [],
+    
+    // Genre and style information
+    genre: discogsResult.genre ? discogsResult.genre.join(', ') : '',
+    genres: discogsResult.genre || [],
+    style: discogsResult.style ? discogsResult.style.join(', ') : '',
+    styles: discogsResult.style || [],
+    
+    // Additional metadata
+    country: discogsResult.country,
+    catno: discogsResult.catno,
+    barcode: discogsResult.barcode,
+    
+    // Community data
+    community: discogsResult.community || { want: 0, have: 0 },
+    
+    // Master release info
+    master_id: discogsResult.master_id,
+    master_url: discogsResult.master_url,
+  };
+};
+
+/**
+ * Extract artist name from Discogs title (format: "Artist - Album")
+ * @param {string} title - Full title from Discogs
+ * @returns {string} - Artist name
+ */
+const extractArtistFromTitle = (title) => {
+  if (!title) return '';
+  const parts = title.split(' - ');
+  return parts[0] || '';
+};
+
+/**
+ * Extract album name from Discogs title (format: "Artist - Album")
+ * @param {string} title - Full title from Discogs
+ * @returns {string} - Album name
+ */
+const extractAlbumFromTitle = (title) => {
+  if (!title) return '';
+  const parts = title.split(' - ');
+  return parts.slice(1).join(' - ') || title;
 };
 
 /**
@@ -155,30 +228,251 @@ const apiRequest = async (url, options = {}) => {
 };
 
 /**
- * Search for records in the Discogs database
- * @param {SearchParams} searchParams - Search parameters
- * @returns {Promise<SearchResponse>} - Search results
+ * Search for records in the Discogs database without authentication
+ * 
+ * This function performs a public search request to the Discogs API
+ * without requiring authentication. Perfect for basic searches.
+ * 
+ * @param {SearchParams} searchParams - Search parameters object
+ * @param {string} [searchParams.query] - General search query
+ * @param {string} [searchParams.genre] - Genre filter
+ * @param {string} [searchParams.style] - Style/format filter
+ * @param {string} [searchParams.artist] - Artist name filter
+ * @param {string} [searchParams.label] - Record label filter
+ * @param {string} [searchParams.yearFrom] - Start year for range
+ * @param {string} [searchParams.yearTo] - End year for range
+ * @param {number} [searchParams.page=1] - Page number for pagination
+ * @param {number} [searchParams.per_page=50] - Results per page
+ * @returns {Promise<SearchResponse>} - Search results with pagination
+ */
+export const searchRecordsPublic = async (searchParams) => {
+  try {
+    console.log('🔍 Searching Discogs (public API) with parameters:', searchParams);
+    
+    // Prepare search parameters for Discogs API
+    const params = {
+      // Main search query
+      q: searchParams.query || searchParams.searchQuery,
+      
+      // Search type - focus on releases for vinyl records
+      type: 'release',
+      
+      // Genre filter
+      genre: searchParams.genre,
+      
+      // Style/format filter
+      style: searchParams.style,
+      format: searchParams.format || searchParams.style,
+      
+      // Artist filter
+      artist: searchParams.artist,
+      
+      // Label filter
+      label: searchParams.label,
+      
+      // Year filter
+      year: buildYearFilter(searchParams.yearFrom, searchParams.yearTo),
+      
+      // Pagination
+      page: searchParams.page || 1,
+      per_page: Math.min(searchParams.per_page || 50, 100), // Max 100 per page
+    };
+    
+    // Remove empty parameters
+    const cleanParams = Object.fromEntries(
+      Object.entries(params).filter(([_, value]) => value !== undefined && value !== '')
+    );
+    
+    // Get authentication credentials from environment
+    const personalToken = Constants.expoConfig?.extra?.DISCOGS_PERSONAL_TOKEN || 
+                         process.env.EXPO_PUBLIC_DISCOGS_PERSONAL_TOKEN;
+    const consumerKey = Constants.expoConfig?.extra?.DISCOGS_CONSUMER_KEY || 
+                       process.env.EXPO_PUBLIC_DISCOGS_CONSUMER_KEY;
+    const consumerSecret = Constants.expoConfig?.extra?.DISCOGS_CONSUMER_SECRET || 
+                          process.env.EXPO_PUBLIC_DISCOGS_CONSUMER_SECRET;
+    
+    // Build query string
+    const queryString = new URLSearchParams(cleanParams).toString();
+    const url = `${DISCOGS_BASE_URL}${ENDPOINTS.search}?${queryString}`;
+    
+    console.log('📡 Making API request to:', url);
+    
+    // Prepare headers
+    const headers = {
+      'User-Agent': 'LuckyFindMVP/1.0 +https://github.com/luba/LuckyFindMVP',
+    };
+    
+    // Use Personal Access Token if available (preferred method)
+    if (personalToken) {
+      headers['Authorization'] = `Discogs token=${personalToken}`;
+      console.log('🔑 Using Personal Access Token authentication');
+    } else if (consumerKey && consumerSecret) {
+      headers['Authorization'] = `Discogs key=${consumerKey}, secret=${consumerSecret}`;
+      console.log('🔑 Using Key + Secret authentication');
+    } else {
+      console.warn('⚠️ No authentication credentials found, API may fail');
+    }
+    
+    // Make API request
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: headers,
+    });
+    
+    // Handle rate limiting
+    if (response.status === 429) {
+      console.warn('⚠️ Rate limit reached, please wait before making more requests');
+      throw new Error('Rate limit exceeded. Please try again in a moment.');
+    }
+    
+    // Handle errors
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Public API Error:', response.status, errorText);
+      throw new Error(`API Error: ${response.status} - ${errorText}`);
+    }
+    
+    const data = await response.json();
+    console.log('✅ Public search successful, found', data.results?.length || 0, 'results');
+    
+    // Transform results to our format
+    const transformedResults = data.results?.map(transformSearchResult) || [];
+    
+    return {
+      results: transformedResults,
+      pagination: data.pagination || {
+        page: 1,
+        pages: 1,
+        per_page: 50,
+        items: transformedResults.length,
+        urls: {}
+      }
+    };
+    
+  } catch (error) {
+    console.error('❌ Public search failed:', error.message);
+    
+    // Fallback to mock data if API authentication fails
+    if (error.message.includes('401') || error.message.includes('authenticate')) {
+      console.log('🔄 Falling back to mock data for development...');
+      // Convert searchParams to filters format for mock function
+      const filters = {
+        searchQuery: searchParams.query || searchParams.searchQuery,
+        genre: searchParams.genre,
+        style: searchParams.style,
+        artist: searchParams.artist,
+        label: searchParams.label,
+        yearFrom: searchParams.yearFrom,
+        yearTo: searchParams.yearTo,
+      };
+      return await mockAdvancedSearch(filters);
+    }
+    
+    throw error;
+  }
+};
+
+/**
+ * Search for records in the Discogs database using OAuth authentication
+ * 
+ * This function performs an authenticated search request to the Discogs API
+ * using the stored OAuth tokens. It handles various search parameters including
+ * text queries, genre filters, price ranges, and more.
+ * 
+ * @param {SearchParams} searchParams - Search parameters object
+ * @param {string} [searchParams.query] - General search query
+ * @param {string} [searchParams.genre] - Genre filter
+ * @param {string} [searchParams.style] - Style/format filter
+ * @param {string} [searchParams.artist] - Artist name filter
+ * @param {string} [searchParams.label] - Record label filter
+ * @param {string} [searchParams.yearFrom] - Start year for range
+ * @param {string} [searchParams.yearTo] - End year for range
+ * @param {string} [searchParams.priceMin] - Minimum price
+ * @param {string} [searchParams.priceMax] - Maximum price
+ * @param {number} [searchParams.page=1] - Page number for pagination
+ * @param {number} [searchParams.per_page=50] - Results per page
+ * @returns {Promise<SearchResponse>} - Search results with pagination
+ * @throws {Error} - If authentication fails or API request fails
  */
 export const searchRecords = async (searchParams) => {
   try {
-    // Prepare search parameters
+    console.log('🔍 Searching Discogs with parameters:', searchParams);
+    
+    // Check authentication status
+    const authenticated = await isAuthenticated();
+    if (!authenticated) {
+      throw new Error('Authentication required. Please log in to Discogs first.');
+    }
+    
+    // Prepare search parameters for Discogs API
     const params = {
-      ...searchParams,
-      per_page: searchParams.per_page || 50, // Default to 50 results per page
-      page: searchParams.page || 1, // Default to first page
+      // Main search query
+      q: searchParams.query || searchParams.searchQuery,
+      
+      // Search type - focus on releases for vinyl records
+      type: 'release',
+      
+      // Genre filter
+      genre: searchParams.genre,
+      
+      // Style/format filter
+      style: searchParams.style,
+      format: searchParams.format || searchParams.style,
+      
+      // Artist filter
+      artist: searchParams.artist,
+      
+      // Label filter
+      label: searchParams.label,
+      
+      // Year handling - Discogs supports year ranges
+      year: buildYearFilter(searchParams.yearFrom, searchParams.yearTo),
+      
+      // Pagination
+      page: searchParams.page || 1,
+      per_page: Math.min(searchParams.per_page || 50, 100), // Discogs max is 100
     };
     
-    // Build API URL
-    const url = buildApiUrl(ENDPOINTS.search, params);
+    // Remove empty parameters
+    Object.keys(params).forEach(key => {
+      if (params[key] === undefined || params[key] === null || params[key] === '') {
+        delete params[key];
+      }
+    });
     
-    // Make API request
-    const response = await apiRequest(url);
+    // Build full API URL
+    const url = `${DISCOGS_BASE_URL}${ENDPOINTS.search}`;
     
-    return response;
+    console.log('🔄 Making authenticated request to Discogs API...');
+    
+    // Make authenticated API request
+    const response = await makeAuthenticatedRequest(url, 'GET', params);
+    
+    console.log(`✅ Search completed successfully. Found ${response.pagination?.items || 0} results`);
+    
+    // Transform response to match our expected format
+    return {
+      pagination: response.pagination || {
+        page: 1,
+        pages: 1,
+        per_page: 50,
+        items: 0,
+        urls: {},
+      },
+      results: (response.results || []).map(transformSearchResult),
+    };
     
   } catch (error) {
     console.error('❌ Search records failed:', error.message);
-    throw new Error(`Failed to search records: ${error.message}`);
+    
+    // Re-throw with more specific error message
+    if (error.message.includes('Authentication')) {
+      throw new Error('Authentication failed. Please log in to your Discogs account.');
+    } else if (error.message.includes('Rate limit')) {
+      throw new Error('Too many requests. Please wait a moment before searching again.');
+    } else {
+      throw new Error(`Search failed: ${error.message}`);
+    }
   }
 };
 
@@ -232,56 +526,53 @@ export const getLabelInfo = async (labelId) => {
 
 /**
  * Advanced search with multiple filters
- * This function combines multiple search parameters for more specific results
+ * This is a convenience wrapper around searchRecords that accepts
+ * the same filter format used by the SearchScreen component
+ * 
  * @param {object} filters - Filter object containing search criteria
+ * @param {string} [filters.searchQuery] - Main search query
+ * @param {string} [filters.genre] - Genre filter
+ * @param {string} [filters.style] - Style/format filter  
+ * @param {string} [filters.artist] - Artist filter
+ * @param {string} [filters.label] - Label filter
+ * @param {string} [filters.yearFrom] - Start year for range
+ * @param {string} [filters.yearTo] - End year for range
+ * @param {string} [filters.priceMin] - Minimum price (note: Discogs doesn't support price filtering)
+ * @param {string} [filters.priceMax] - Maximum price (note: Discogs doesn't support price filtering)
+ * @param {number} [filters.page=1] - Page number
+ * @param {number} [filters.perPage=50] - Results per page
  * @returns {Promise<SearchResponse>} - Filtered search results
+ * @throws {Error} - If search fails or authentication is required
  */
 export const advancedSearch = async (filters) => {
   try {
-    const {
-      searchQuery,
-      genre,
-      style,
-      artist,
-      label,
-      yearFrom,
-      yearTo,
-      format,
-      country,
-      page = 1,
-      perPage = 50,
-    } = filters;
+    console.log('🔍 Advanced search with filters:', filters);
     
-    // Build search parameters
+    // Map filter object to search parameters
     const searchParams = {
-      q: searchQuery,
-      type: 'release', // Focus on releases for record search
-      genre: genre,
-      style: style,
-      artist: artist,
-      label: label,
-      format: format,
-      country: country,
-      page: page,
-      per_page: perPage,
+      query: filters.searchQuery || filters.query,
+      genre: filters.genre,
+      style: filters.style,
+      format: filters.format || filters.style,
+      artist: filters.artist,
+      label: filters.label,
+      yearFrom: filters.yearFrom,
+      yearTo: filters.yearTo,
+      page: filters.page || 1,
+      per_page: filters.perPage || filters.per_page || 50,
     };
     
-    // Handle year range
-    if (yearFrom && yearTo) {
-      searchParams.year = `${yearFrom}-${yearTo}`;
-    } else if (yearFrom) {
-      searchParams.year = yearFrom;
-    } else if (yearTo) {
-      searchParams.year = yearTo;
+    // Note: Discogs API doesn't support price filtering directly
+    // Price information would need to be filtered from marketplace data
+    if (filters.priceMin || filters.priceMax) {
+      console.warn('⚠️ Price filtering is not supported by Discogs search API. Use marketplace API for pricing data.');
     }
     
-    console.log('🔍 Advanced search with filters:', searchParams);
-    
-    return await searchRecords(searchParams);
+    return await searchRecordsPublic(searchParams);
     
   } catch (error) {
     console.error('❌ Advanced search failed:', error.message);
-    throw new Error(`Advanced search failed: ${error.message}`);
+    throw error; // Re-throw to preserve the original error message
   }
 };
 
@@ -329,14 +620,20 @@ export const mockSearchResults = {
       id: 1,
       type: 'release',
       title: 'The Beatles - Abbey Road',
+      artist: 'The Beatles',
+      album: 'Abbey Road',
       thumb: 'https://via.placeholder.com/150x150/D2B48C/000000?text=Abbey+Road',
       cover_image: 'https://via.placeholder.com/500x500/D2B48C/000000?text=Abbey+Road',
       resource_url: 'https://api.discogs.com/releases/1',
       year: '1969',
-      format: ['Vinyl', 'LP', 'Album'],
-      label: ['Apple Records'],
-      genre: ['Rock'],
-      style: ['Pop Rock'],
+      format: 'Vinyl, LP, Album',
+      formats: ['Vinyl', 'LP', 'Album'],
+      label: 'Apple Records',
+      labels: ['Apple Records'],
+      genre: 'Rock',
+      genres: ['Rock'],
+      style: 'Pop Rock',
+      styles: ['Pop Rock'],
       country: 'UK',
       community: { want: 1500, have: 3200 },
     },
@@ -344,16 +641,85 @@ export const mockSearchResults = {
       id: 2,
       type: 'release',
       title: 'Pink Floyd - The Dark Side of the Moon',
+      artist: 'Pink Floyd',
+      album: 'The Dark Side of the Moon',
       thumb: 'https://via.placeholder.com/150x150/D2B48C/000000?text=Dark+Side',
       cover_image: 'https://via.placeholder.com/500x500/D2B48C/000000?text=Dark+Side',
       resource_url: 'https://api.discogs.com/releases/2',
       year: '1973',
-      format: ['Vinyl', 'LP', 'Album'],
-      label: ['Harvest'],
-      genre: ['Rock'],
-      style: ['Progressive Rock'],
+      format: 'Vinyl, LP, Album',
+      formats: ['Vinyl', 'LP', 'Album'],
+      label: 'Harvest',
+      labels: ['Harvest'],
+      genre: 'Rock',
+      genres: ['Rock'],
+      style: 'Progressive Rock',
+      styles: ['Progressive Rock'],
       country: 'UK',
       community: { want: 2100, have: 4800 },
+    },
+    {
+      id: 3,
+      type: 'release',
+      title: 'Led Zeppelin - Led Zeppelin IV',
+      artist: 'Led Zeppelin',
+      album: 'Led Zeppelin IV',
+      thumb: 'https://via.placeholder.com/150x150/D2B48C/000000?text=Led+Zep+IV',
+      cover_image: 'https://via.placeholder.com/500x500/D2B48C/000000?text=Led+Zep+IV',
+      resource_url: 'https://api.discogs.com/releases/3',
+      year: '1971',
+      format: 'Vinyl, LP, Album',
+      formats: ['Vinyl', 'LP', 'Album'],
+      label: 'Atlantic',
+      labels: ['Atlantic'],
+      genre: 'Rock',
+      genres: ['Rock'],
+      style: 'Hard Rock',
+      styles: ['Hard Rock'],
+      country: 'US',
+      community: { want: 1800, have: 2900 },
+    },
+    {
+      id: 4,
+      type: 'release',
+      title: 'Miles Davis - Kind of Blue',
+      artist: 'Miles Davis',
+      album: 'Kind of Blue',
+      thumb: 'https://via.placeholder.com/150x150/D2B48C/000000?text=Kind+Blue',
+      cover_image: 'https://via.placeholder.com/500x500/D2B48C/000000?text=Kind+Blue',
+      resource_url: 'https://api.discogs.com/releases/4',
+      year: '1959',
+      format: 'Vinyl, LP, Album',
+      formats: ['Vinyl', 'LP', 'Album'],
+      label: 'Columbia',
+      labels: ['Columbia'],
+      genre: 'Jazz',
+      genres: ['Jazz'],
+      style: 'Cool Jazz',
+      styles: ['Cool Jazz'],
+      country: 'US',
+      community: { want: 2500, have: 1800 },
+    },
+    {
+      id: 5,
+      type: 'release',
+      title: 'Fleetwood Mac - Rumours',
+      artist: 'Fleetwood Mac',
+      album: 'Rumours',
+      thumb: 'https://via.placeholder.com/150x150/D2B48C/000000?text=Rumours',
+      cover_image: 'https://via.placeholder.com/500x500/D2B48C/000000?text=Rumours',
+      resource_url: 'https://api.discogs.com/releases/5',
+      year: '1977',
+      format: 'Vinyl, LP, Album',
+      formats: ['Vinyl', 'LP', 'Album'],
+      label: 'Warner Bros.',
+      labels: ['Warner Bros.'],
+      genre: 'Rock',
+      genres: ['Rock'],
+      style: 'Pop Rock',
+      styles: ['Pop Rock'],
+      country: 'US',
+      community: { want: 1200, have: 3800 },
     },
   ],
 };

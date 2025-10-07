@@ -10,7 +10,8 @@ const { width, height } = Dimensions.get('window');
 // Color palette for the app
 export const colors = {
   // Primary colors
-  primary: '#D2B48C', // Sand yellow - used for accents, buttons, highlights
+  primary: '#DFFF00', // Chartreuse - used for accents, buttons, highlights
+  accent: '#DFFF00', // Chartreuse - accent color alias
   background: '#000000', // Pure black - main background
   
   // Secondary colors
@@ -20,10 +21,10 @@ export const colors = {
   // Text colors
   text: '#FFFFFF', // White - primary text
   textSecondary: '#666666', // Gray - secondary text, placeholders
-  textAccent: '#D2B48C', // Sand yellow - accent text, labels
+  textAccent: '#DFFF00', // Chartreuse - accent text, labels
   
   // Interactive states
-  border: '#D2B48C', // Sand yellow - borders, outlines
+  border: '#DFFF00', // Chartreuse - borders, outlines
   borderSecondary: '#333333', // Dark gray - subtle borders
   
   // Status colors

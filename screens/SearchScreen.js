@@ -22,19 +22,17 @@ import {
 } from 'react-native';
 
 // Import custom components
-import { AuthButton, Button, Dropdown, Input, SearchResults } from '../components';
+import { Button, Dropdown, Input } from '../components';
 
 // Import API and theme
 import { advancedSearch } from '../api/discogs';
 import { colors, commonStyles, spacing, typography } from '../styles/theme';
+import { router } from 'expo-router';
 
 /**
  * Main SearchScreen functional component
  */
 const SearchScreen = () => {
-  // Authentication state
-  const [isAuth, setIsAuth] = useState(false);
-  
   // Search query state
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -48,17 +46,13 @@ const SearchScreen = () => {
   const [filters, setFilters] = useState({
     genre: '',
     style: '',
-    minPrice: '',
-    maxPrice: '',
-    yearFrom: '',
-    yearTo: '',
     artist: '',
     label: '',
+    yearFrom: '',
+    yearTo: '',
+    minPrice: '',
+    maxPrice: '',
   });
-  
-  // Search results state
-  const [searchResults, setSearchResults] = useState(null);
-  const [searchError, setSearchError] = useState(null);
   
   // Filter options data
   const filterOptions = {
@@ -175,10 +169,6 @@ const SearchScreen = () => {
       // Close any open dropdowns
       setOpenDropdown(null);
       
-      // Clear previous results and errors
-      setSearchResults(null);
-      setSearchError(null);
-      
       // Start loading state
       setIsLoading(true);
       
@@ -202,16 +192,18 @@ const SearchScreen = () => {
       // Call Discogs API
       const results = await advancedSearch(searchParams);
       
-      // Update results state
-      setSearchResults(results);
-      
       console.log(`✅ Search completed successfully. Found ${results.pagination?.items || 0} results`);
       
-      // Show success message for significant results
+      // Navigate to results screen
       if (results.pagination?.items > 0) {
-        const message = `Found ${results.pagination.items} record${results.pagination.items !== 1 ? 's' : ''} matching your search.`;
-        // Don't show alert, let the UI display the results
-        console.log('📊 Search results:', message);
+        router.push({
+          pathname: '/search-results',
+          params: {
+            initialResults: JSON.stringify(results),
+            searchQuery: searchQuery.trim(),
+            searchParams: JSON.stringify(searchParams),
+          }
+        });
       } else {
         Alert.alert(
           'No Results',
@@ -222,9 +214,6 @@ const SearchScreen = () => {
       
     } catch (error) {
       console.error('❌ Search failed:', error.message);
-      
-      // Set error state for UI display
-      setSearchError(error.message);
       
       // Show appropriate error message
       let errorTitle = 'Search Error';
@@ -250,19 +239,6 @@ const SearchScreen = () => {
   };
   
   /**
-   * Handle authentication state changes
-   * @param {boolean} authenticated - New authentication state
-   */
-  const handleAuthChange = (authenticated) => {
-    setIsAuth(authenticated);
-    if (!authenticated) {
-      // Clear search results when logged out
-      setSearchResults(null);
-      setSearchError(null);
-    }
-  };
-
-  /**
    * Reset all filters and search query
    */
   const handleReset = () => {
@@ -282,19 +258,6 @@ const SearchScreen = () => {
     setSearchError(null);
   };
 
-  /**
-   * Handle result item press (for future detail view)
-   */
-  const handleResultItemPress = (item) => {
-    console.log('Selected record:', item);
-    // TODO: Navigate to record detail screen
-    Alert.alert(
-      'Record Details',
-      `${item.title}\n\nThis would open a detailed view of the record.`,
-      [{ text: 'OK' }]
-    );
-  };
-  
   // Close dropdown when user scrolls
   const handleScroll = () => {
     if (openDropdown) {
@@ -456,10 +419,9 @@ const SearchScreen = () => {
         <View style={styles.actionButtons}>
           {/* Search Button */}
           <Button
-            title={isAuth ? "Search Records" : "Login Required"}
+            title={isLoading ? "Searching..." : "Search Records"}
             onPress={handleSearch}
-            loading={isLoading}
-            disabled={isLoading || !isAuth}
+            disabled={isLoading || !searchQuery.trim()}
             style={styles.searchButton}
           />
           
@@ -473,18 +435,6 @@ const SearchScreen = () => {
           />
         </View>
       </ScrollView>
-      
-      {/* Search Results Section */}
-      {(searchResults || isLoading || searchError) && (
-        <View style={styles.resultsContainer}>
-          <SearchResults
-            results={searchResults?.results || []}
-            isLoading={isLoading}
-            error={searchError}
-            onItemPress={handleResultItemPress}
-          />
-        </View>
-      )}
     </View>
   );
 };
@@ -570,7 +520,37 @@ const styles = StyleSheet.create({
     // Outline button styling from Button component
   },
   
-  // Results container
+  // Search header for results view
+  searchHeader: {
+    backgroundColor: colors.background,
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderSecondary,
+  },
+  
+  searchInputRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: spacing.sm,
+  },
+  
+  compactInput: {
+    flex: 1,
+  },
+  
+  compactSearchButton: {
+    minWidth: 80,
+  },
+  
+  // Full screen results
+  fullScreenResults: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  
+  // Results container (legacy)
   resultsContainer: {
     flex: 1,
     backgroundColor: colors.background,

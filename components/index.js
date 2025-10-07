@@ -1,6 +1,27 @@
 /**
- * Components Index File
- * 
+ * Component// Core UI Components
+export { default as Button } from './Button';
+export { default as Input } from './Input';
+export { default as Dropdown } from './Dropdown';
+export { default as AuthButton } from './AuthButton';
+export { default as SearchResults } from './SearchResults';
+
+// Screens
+export { default as SearchScreen } from '../screens/SearchScreen';
+export { default as SearchResultsScreen } from '../screens/SearchResultsScreen';
+export { default as RecordDetailScreen } from '../screens/RecordDetailScreen';
+
+// Export all components as a single object for flexibility
+export default {
+  Button: require('./Button').default,
+  Input: require('./Input').default,
+  Dropdown: require('./Dropdown').default,
+  AuthButton: require('./AuthButton').default,
+  SearchResults: require('./SearchResults').default,
+  SearchScreen: require('../screens/SearchScreen').default,
+  SearchResultsScreen: require('../screens/SearchResultsScreen').default,
+  RecordDetailScreen: require('../screens/RecordDetailScreen').default,
+}; 
  * Centralized export file for all reusable UI components.
  * This allows for cleaner imports throughout the application.
  * 

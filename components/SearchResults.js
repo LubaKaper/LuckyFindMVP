@@ -194,11 +194,14 @@ const SearchResults = ({
         </Text>
       </View>
       
-      {/* Results List */}
+      {/* Results Grid */}
       <FlatList
+        key="grid-2-columns" // Force re-render when numColumns changes
         data={results}
         renderItem={renderResultItem}
         keyExtractor={(item, index) => `${item.id}-${index}`}
+        numColumns={2}
+        columnWrapperStyle={styles.row}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         onEndReached={handleEndReached}
@@ -236,21 +239,29 @@ const styles = StyleSheet.create({
     padding: spacing.base,
   },
   
+  // Row for grid layout
+  row: {
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.sm,
+  },
+  
   // Result Card
   resultCard: {
     backgroundColor: colors.backgroundSecondary,
     borderRadius: borderRadius.lg,
     marginBottom: spacing.base,
-    padding: spacing.base,
-    flexDirection: 'row',
+    padding: spacing.sm,
+    flexDirection: 'column',
+    flex: 1,
+    marginHorizontal: spacing.xs,
     ...shadows.sm,
   },
   
   // Image
   imageContainer: {
-    width: 80,
-    height: 80,
-    marginRight: spacing.base,
+    width: '100%',
+    aspectRatio: 1,
+    marginBottom: spacing.sm,
   },
   
   albumImage: {
@@ -276,18 +287,17 @@ const styles = StyleSheet.create({
   // Info
   infoContainer: {
     flex: 1,
-    justifyContent: 'flex-start',
   },
   
   title: {
-    fontSize: typography.fontSize.base,
+    fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.semiBold,
     color: colors.text,
     marginBottom: spacing.xs,
   },
   
   artist: {
-    fontSize: typography.fontSize.sm,
+    fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.medium,
     color: colors.textAccent,
     marginBottom: spacing.xs,

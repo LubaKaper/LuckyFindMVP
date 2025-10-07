@@ -89,24 +89,19 @@ export const borderRadius = {
 // Shadow configurations
 export const shadows = {
   sm: {
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    boxShadow: `0 1px 2px rgba(223, 255, 0, 0.1)`,
     elevation: 2,
   },
   base: {
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    boxShadow: `0 2px 4px rgba(223, 255, 0, 0.2)`,
     elevation: 3,
   },
+  md: {
+    boxShadow: `0 3px 5px rgba(223, 255, 0, 0.25)`,
+    elevation: 4,
+  },
   lg: {
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
+    boxShadow: `0 4px 6px rgba(223, 255, 0, 0.3)`,
     elevation: 5,
   },
 };

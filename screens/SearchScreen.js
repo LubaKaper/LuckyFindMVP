@@ -18,6 +18,7 @@ import {
     ScrollView,
     StyleSheet,
     Text,
+    TextInput,
     View,
 } from 'react-native';
 
@@ -26,7 +27,7 @@ import { Button, Dropdown, Input } from '../components';
 
 // Import API and theme
 import { router } from 'expo-router';
-import { advancedSearch } from '../api/discogs';
+import { advancedSearch, searchLabelsByReleaseCount } from '../api/discogs';
 import { colors, commonStyles, spacing, typography } from '../styles/theme';
 
 /**
@@ -48,22 +49,24 @@ const SearchScreen = () => {
     style: '',
     artist: '',
     label: '',
+    country: '',
     yearFrom: '',
     yearTo: '',
     minPrice: '',
     maxPrice: '',
+    maxReleases: '',
   });
   
   // Filter options data
   const filterOptions = {
     genre: [
       { label: 'All Genres', value: '' },
+      { label: 'Electronic', value: 'electronic' },
       { label: 'Rock', value: 'rock' },
       { label: 'Jazz', value: 'jazz' },
+      { label: 'Hip Hop', value: 'hiphop' },
       { label: 'Blues', value: 'blues' },
       { label: 'Classical', value: 'classical' },
-      { label: 'Electronic', value: 'electronic' },
-      { label: 'Hip Hop', value: 'hiphop' },
       { label: 'Pop', value: 'pop' },
       { label: 'Reggae', value: 'reggae' },
       { label: 'Country', value: 'country' },
@@ -73,15 +76,38 @@ const SearchScreen = () => {
     ],
     
     style: [
-      { label: 'All Formats', value: '' },
-      { label: 'Vinyl', value: 'vinyl' },
-      { label: 'LP', value: 'lp' },
-      { label: '12"', value: '12inch' },
-      { label: '7"', value: '7inch' },
-      { label: 'EP', value: 'ep' },
-      { label: 'CD', value: 'cd' },
-      { label: 'Cassette', value: 'cassette' },
-      { label: 'Digital', value: 'digital' },
+      { label: 'All Styles', value: '' },
+      { label: 'Techno', value: 'techno' },
+      { label: 'House', value: 'house' },
+      { label: 'Tech House', value: 'tech house' },
+      { label: 'Deep House', value: 'deep house' },
+      { label: 'Minimal', value: 'minimal' },
+      { label: 'Electro', value: 'electro' },
+      { label: 'Trance', value: 'trance' },
+      { label: 'Drum & Bass', value: 'drum n bass' },
+      { label: 'Dubstep', value: 'dubstep' },
+      { label: 'Ambient', value: 'ambient' },
+      { label: 'Industrial', value: 'industrial' },
+      { label: 'Breakbeat', value: 'breakbeat' },
+    ],
+    
+    country: [
+      { label: 'All Countries', value: '' },
+      { label: 'United States', value: 'US' },
+      { label: 'United Kingdom', value: 'UK' },
+      { label: 'Germany', value: 'Germany' },
+      { label: 'France', value: 'France' },
+      { label: 'Netherlands', value: 'Netherlands' },
+      { label: 'Italy', value: 'Italy' },
+      { label: 'Canada', value: 'Canada' },
+      { label: 'Japan', value: 'Japan' },
+      { label: 'Australia', value: 'Australia' },
+      { label: 'Belgium', value: 'Belgium' },
+      { label: 'Spain', value: 'Spain' },
+      { label: 'Sweden', value: 'Sweden' },
+      { label: 'Denmark', value: 'Denmark' },
+      { label: 'Norway', value: 'Norway' },
+      { label: 'Switzerland', value: 'Switzerland' },
     ],
     
     price: [
@@ -94,30 +120,20 @@ const SearchScreen = () => {
       { label: '$200+', value: '200+' },
     ],
     
-    artist: [
-      { label: 'Any Artist', value: '' },
-      { label: 'The Beatles', value: 'beatles' },
-      { label: 'Led Zeppelin', value: 'ledzeppelin' },
-      { label: 'Pink Floyd', value: 'pinkfloyd' },
-      { label: 'Miles Davis', value: 'milesdavis' },
-      { label: 'Bob Dylan', value: 'bobdylan' },
-      { label: 'David Bowie', value: 'davidbowie' },
-      { label: 'The Rolling Stones', value: 'rollingstones' },
-      { label: 'Jimi Hendrix', value: 'jimihendrix' },
-      { label: 'John Coltrane', value: 'johncoltrane' },
-    ],
-    
     label: [
       { label: 'Any Label', value: '' },
-      { label: 'Capitol Records', value: 'capitol' },
-      { label: 'Columbia Records', value: 'columbia' },
-      { label: 'Atlantic Records', value: 'atlantic' },
-      { label: 'Blue Note', value: 'bluenote' },
-      { label: 'Motown', value: 'motown' },
-      { label: 'Warner Bros', value: 'warner' },
-      { label: 'EMI', value: 'emi' },
-      { label: 'RCA Records', value: 'rca' },
-      { label: 'Decca', value: 'decca' },
+      { label: 'Warp Records', value: 'warp' },
+      { label: 'R&S Records', value: 'rs records' },
+      { label: 'Tresor', value: 'tresor' },
+      { label: 'Ostgut Ton', value: 'ostgut ton' },
+      { label: 'Drumcode', value: 'drumcode' },
+      { label: 'Cocoon', value: 'cocoon' },
+      { label: 'Kompakt', value: 'kompakt' },
+      { label: 'Underground Resistance', value: 'underground resistance' },
+      { label: 'Soma Records', value: 'soma' },
+      { label: 'Minus', value: 'minus' },
+      { label: 'Defected', value: 'defected' },
+      { label: 'Ninja Tune', value: 'ninja tune' },
     ],
   };
   
@@ -149,6 +165,35 @@ const SearchScreen = () => {
       [filterName]: value,
     }));
   };
+
+  /**
+   * Reset all filters to default values
+   */
+  const resetFilters = () => {
+    setFilters({
+      genre: '',
+      style: '',
+      artist: '',
+      label: '',
+      country: '',
+      yearFrom: '',
+      yearTo: '',
+      minPrice: '',
+      maxPrice: '',
+      maxReleases: '',
+    });
+    setSearchQuery('');
+    setOpenDropdown(null);
+  };
+
+  /**
+   * Check if search should be enabled
+   */
+  const canSearch = () => {
+    const hasSearchQuery = searchQuery.trim().length > 0;
+    const hasFilters = Object.values(filters).some(filter => filter && filter.trim().length > 0);
+    return hasSearchQuery || hasFilters;
+  };
   
   /**
    * Handle search execution
@@ -156,11 +201,14 @@ const SearchScreen = () => {
    */
   const handleSearch = async () => {
     try {
-      // Validate search query
-      if (!searchQuery.trim()) {
+      // Check if we have either a search query or at least one filter
+      const hasSearchQuery = searchQuery.trim().length > 0;
+      const hasFilters = Object.values(filters).some(filter => filter && filter.trim().length > 0);
+      
+      if (!hasSearchQuery && !hasFilters) {
         Alert.alert(
           'Search Required',
-          'Please enter a search term to find records.',
+          'Please enter a search term or select at least one filter to find records.',
           [{ text: 'OK' }]
         );
         return;
@@ -179,6 +227,7 @@ const SearchScreen = () => {
         style: filters.style,
         artist: filters.artist,
         label: filters.label,
+        country: filters.country,
         yearFrom: filters.yearFrom,
         yearTo: filters.yearTo,
         priceMin: filters.minPrice, // Note: Discogs doesn't support price filtering
@@ -189,8 +238,70 @@ const SearchScreen = () => {
       
       console.log('🔍 Searching Discogs with parameters:', searchParams);
       
-      // Call Discogs API
-      const results = await advancedSearch(searchParams);
+      // Check if we need to filter by label release count
+      const hasReleaseCountFilter = filters.maxReleases;
+      
+      let results;
+      
+      if (hasReleaseCountFilter) {
+        // Search for labels by release count first, then get their releases
+        const minReleases = 0; // Always start from 0
+        const maxReleases = parseInt(filters.maxReleases) || Infinity;
+        
+        console.log('🏷️ Filtering by label release count:', { minReleases, maxReleases });
+        
+        const filteredLabels = await searchLabelsByReleaseCount(
+          filters.label || searchQuery.trim(), 
+          minReleases, 
+          maxReleases
+        );
+        
+        if (filteredLabels.length === 0) {
+          // No labels match the criteria
+          results = {
+            results: [],
+            pagination: { items: 0, pages: 0, page: 1, per_page: 50 }
+          };
+        } else {
+          // Search for releases from the filtered labels
+          const labelNames = filteredLabels.map(label => label.title).slice(0, 5); // Limit to top 5 labels
+          const labelSearchPromises = labelNames.map(labelName => {
+            const labelSearchParams = {
+              ...searchParams,
+              label: labelName,
+            };
+            return advancedSearch(labelSearchParams);
+          });
+          
+          const labelResults = await Promise.all(labelSearchPromises);
+          
+          // Combine results from all labels
+          const combinedResults = labelResults.reduce((acc, result) => {
+            if (result.results) {
+              acc.push(...result.results);
+            }
+            return acc;
+          }, []);
+          
+          // Remove duplicates based on ID
+          const uniqueResults = combinedResults.filter((record, index, self) => 
+            index === self.findIndex(r => r.id === record.id)
+          );
+          
+          results = {
+            results: uniqueResults.slice(0, 50), // Limit to 50 results
+            pagination: { 
+              items: uniqueResults.length, 
+              pages: Math.ceil(uniqueResults.length / 50), 
+              page: 1, 
+              per_page: 50 
+            }
+          };
+        }
+      } else {
+        // Regular search without release count filtering
+        results = await advancedSearch(searchParams);
+      }
       
       console.log(`✅ Search completed successfully. Found ${results.pagination?.items || 0} results`);
       
@@ -298,7 +409,7 @@ const SearchScreen = () => {
         <Input
           value={searchQuery}
           onChangeText={setSearchQuery}
-          placeholder="Search records, artists, albums..."
+          placeholder="Search records, artists, albums... (optional)"
           label="Search Query"
           autoCapitalize="none"
           autoCorrect={false}
@@ -310,7 +421,7 @@ const SearchScreen = () => {
         <Button
           title={isLoading ? "Searching..." : "Search Records"}
           onPress={handleSearch}
-          disabled={isLoading || !searchQuery.trim()}
+          disabled={isLoading || !canSearch()}
           style={styles.searchButton}
         />
         
@@ -329,15 +440,49 @@ const SearchScreen = () => {
             placeholder="Select genre..."
           />
           
-          {/* Style/Format Filter */}
+          {/* Style Filter */}
           <Dropdown
-            label="Format"
+            label="Style"
             value={filters.style}
             onValueChange={(value) => updateFilter('style', value)}
             options={filterOptions.style}
             isOpen={openDropdown === 'style'}
             onToggle={() => handleDropdownToggle('style')}
-            placeholder="Select format..."
+            placeholder="Select style..."
+          />
+
+          {/* Country Filter */}
+          <Dropdown
+            label="Country"
+            value={filters.country}
+            onValueChange={(value) => updateFilter('country', value)}
+            options={filterOptions.country}
+            isOpen={openDropdown === 'country'}
+            onToggle={() => handleDropdownToggle('country')}
+            placeholder="Select country..."
+          />
+
+          {/* Artist Filter - Optional Text Input */}
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Artist (Optional)</Text>
+            <TextInput
+              style={styles.textInput}
+              value={filters.artist}
+              onChangeText={(text) => updateFilter('artist', text)}
+              placeholder="Enter artist name..."
+              placeholderTextColor="rgba(223, 255, 0, 0.5)"
+            />
+          </View>
+          
+          {/* Label Filter */}
+          <Dropdown
+            label="Label"
+            value={filters.label}
+            onValueChange={(value) => updateFilter('label', value)}
+            options={filterOptions.label}
+            isOpen={openDropdown === 'label'}
+            onToggle={() => handleDropdownToggle('label')}
+            placeholder="Select label..."
           />
           
           {/* Price Range Filters */}
@@ -391,28 +536,20 @@ const SearchScreen = () => {
               />
             </View>
           </View>
-          
-          {/* Artist Filter */}
-          <Dropdown
-            label="Artist"
-            value={filters.artist}
-            onValueChange={(value) => updateFilter('artist', value)}
-            options={filterOptions.artist}
-            isOpen={openDropdown === 'artist'}
-            onToggle={() => handleDropdownToggle('artist')}
-            placeholder="Select artist..."
-          />
-          
-          {/* Label Filter */}
-          <Dropdown
-            label="Label"
-            value={filters.label}
-            onValueChange={(value) => updateFilter('label', value)}
-            options={filterOptions.label}
-            isOpen={openDropdown === 'label'}
-            onToggle={() => handleDropdownToggle('label')}
-            placeholder="Select label..."
-          />
+
+          {/* Label Release Count Section */}
+          <Text style={styles.sectionSubtitle}>Max Label Releases</Text>
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Max Label Releases</Text>
+            <TextInput
+              style={styles.textInput}
+              value={filters.maxReleases}
+              onChangeText={(text) => updateFilter('maxReleases', text)}
+              placeholder="e.g. 1000 (optional)"
+              placeholderTextColor="rgba(223, 255, 0, 0.5)"
+              keyboardType="numeric"
+            />
+          </View>
         </View>
         
         {/* Action Buttons */}
@@ -421,14 +558,14 @@ const SearchScreen = () => {
           <Button
             title={isLoading ? "Searching..." : "Search Records"}
             onPress={handleSearch}
-            disabled={isLoading || !searchQuery.trim()}
+            disabled={isLoading || !canSearch()}
             style={styles.searchButton}
           />
           
           {/* Reset Button */}
           <Button
-            title="Reset Filters"
-            onPress={handleReset}
+            title="Reset Search"
+            onPress={resetFilters}
             variant="outline"
             disabled={isLoading}
             style={styles.resetButton}
@@ -494,6 +631,14 @@ const styles = StyleSheet.create({
     ...commonStyles.subtitle,
     marginBottom: spacing.lg, // 20px spacing below section title
   },
+
+  sectionSubtitle: {
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semiBold,
+    color: colors.accent,
+    marginTop: spacing.md,
+    marginBottom: spacing.sm,
+  },
   
   // Range containers for price and year filters
   rangeContainer: {
@@ -505,6 +650,30 @@ const styles = StyleSheet.create({
     flex: 1, // Equal width for range items
   },
   
+  // Input container styles
+  inputContainer: {
+    marginBottom: spacing.md,
+  },
+  
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
+  },
+  
+  textInput: {
+    backgroundColor: colors.backgroundSecondary,
+    borderColor: colors.border,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    fontSize: 16,
+    color: colors.accent, // Yellow text for better visibility
+    minHeight: 48,
+  },
+
   // Action buttons
   actionButtons: {
     gap: spacing.md, // 12px gap between buttons

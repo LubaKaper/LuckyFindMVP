@@ -24,7 +24,8 @@ import {
 } from 'react-native';
 import { getAccessToken, getRequestToken, isAuthenticated, logout } from '../api/oauth';
 import { borderRadius, colors, spacing, typography } from '../styles/theme';
-import { Button, Input } from './index';
+import Button from './Button';
+import Input from './Input';
 
 const AuthButton = ({ onAuthChange }) => {
   const [isAuth, setIsAuth] = useState(false);

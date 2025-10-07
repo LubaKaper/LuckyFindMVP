@@ -187,6 +187,20 @@ const SearchResultsScreen = () => {
           <Text style={styles.year}>{item.year}</Text>
         )}
         
+        {/* Label */}
+        {item.label && item.label.length > 0 && (
+          <Text style={styles.label} numberOfLines={1}>
+            📀 {typeof item.label === 'string' ? item.label : item.label[0]}
+          </Text>
+        )}
+        
+        {/* Country */}
+        {item.country && (
+          <Text style={styles.country} numberOfLines={1}>
+            🌍 {item.country}
+          </Text>
+        )}
+        
         {/* Genre */}
         {item.genre && (
           <View style={styles.genreContainer}>
@@ -511,6 +525,19 @@ const styles = StyleSheet.create({
   },
 
   year: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
+  },
+
+  label: {
+    fontSize: typography.fontSize.xs,
+    color: colors.accent,
+    marginBottom: spacing.xs,
+    opacity: 0.9,
+  },
+
+  country: {
     fontSize: typography.fontSize.xs,
     color: colors.textSecondary,
     marginBottom: spacing.xs,

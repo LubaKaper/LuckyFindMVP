@@ -270,6 +270,9 @@ export const searchRecordsPublic = async (searchParams) => {
       // Label filter
       label: searchParams.label,
       
+      // Country filter
+      country: searchParams.country,
+      
       // Year filter
       year: buildYearFilter(searchParams.yearFrom, searchParams.yearTo),
       
@@ -525,6 +528,60 @@ export const getLabelInfo = async (labelId) => {
 };
 
 /**
+ * Search for labels and get their release counts
+ * @param {string} labelQuery - Label search query
+ * @param {number} minReleases - Minimum number of releases
+ * @param {number} maxReleases - Maximum number of releases
+ * @returns {Promise<any[]>} - Array of labels with release counts
+ */
+export const searchLabelsByReleaseCount = async (labelQuery = '', minReleases = 0, maxReleases = Infinity) => {
+  try {
+    console.log('🏷️ Searching labels with release count filter:', { labelQuery, minReleases, maxReleases });
+    
+    // Search for labels
+    const searchParams = {
+      q: labelQuery,
+      type: 'label',
+      per_page: 100, // Get more results to filter
+    };
+    
+    const url = `${DISCOGS_BASE_URL}${ENDPOINTS.search}?${new URLSearchParams(searchParams)}`;
+    
+    // Get authentication credentials
+    const personalToken = Constants.expoConfig?.extra?.DISCOGS_PERSONAL_TOKEN || 
+                         process.env.EXPO_PUBLIC_DISCOGS_PERSONAL_TOKEN;
+    
+    const headers = {
+      'User-Agent': 'LuckyFindMVP/1.0 +https://github.com/luba/LuckyFindMVP',
+    };
+    
+    if (personalToken) {
+      headers['Authorization'] = `Discogs token=${personalToken}`;
+    }
+    
+    const response = await fetch(url, { headers });
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.message || `HTTP ${response.status}`);
+    }
+    
+    // Filter labels by release count
+    const filteredLabels = (data.results || []).filter(label => {
+      const releaseCount = label.releases || 0;
+      return releaseCount >= minReleases && releaseCount <= maxReleases;
+    });
+    
+    console.log(`✅ Found ${filteredLabels.length} labels matching release count criteria`);
+    return filteredLabels;
+    
+  } catch (error) {
+    console.error('❌ Label release count search failed:', error.message);
+    throw new Error(`Failed to search labels by release count: ${error.message}`);
+  }
+};
+
+/**
  * Advanced search with multiple filters
  * This is a convenience wrapper around searchRecords that accepts
  * the same filter format used by the SearchScreen component
@@ -556,6 +613,7 @@ export const advancedSearch = async (filters) => {
       format: filters.format || filters.style,
       artist: filters.artist,
       label: filters.label,
+      country: filters.country,
       yearFrom: filters.yearFrom,
       yearTo: filters.yearTo,
       page: filters.page || 1,
@@ -743,6 +801,7 @@ export default {
   getReleaseDetails,
   getArtistInfo,
   getLabelInfo,
+  searchLabelsByReleaseCount,
   advancedSearch,
   getSuggestions,
   mockAdvancedSearch,

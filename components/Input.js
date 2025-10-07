@@ -182,6 +182,7 @@ const styles = StyleSheet.create({
   // Input text styles
   input: {
     ...commonStyles.body,
+    color: colors.accent, // Yellow text for better visibility
     padding: 0, // Remove default padding to use container padding
     margin: 0, // Remove default margin
     textAlignVertical: 'center', // Center text vertically

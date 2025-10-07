@@ -15,8 +15,8 @@
 
 // Core UI Components
 export { default as Button } from './Button';
-export { default as Input } from './Input';
 export { default as Dropdown } from './Dropdown';
+export { default as Input } from './Input';
 
 // Export all components as a single object for flexibility
 export default {

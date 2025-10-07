@@ -20,14 +20,14 @@
 
 import React, { useState } from 'react';
 import {
-  TouchableOpacity,
-  Text,
-  ActivityIndicator,
-  Animated,
-  StyleSheet,
-  View,
+    ActivityIndicator,
+    Animated,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
-import { colors, typography, spacing, borderRadius, shadows, commonStyles } from '../styles/theme';
+import { borderRadius, colors, shadows, spacing, typography } from '../styles/theme';
 
 const Button = ({
   title,

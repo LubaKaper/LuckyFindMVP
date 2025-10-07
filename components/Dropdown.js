@@ -15,16 +15,16 @@
  * - disabled: Optional disabled state
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  Animated,
-  ScrollView,
-  StyleSheet,
+    Animated,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
-import { colors, typography, spacing, borderRadius, shadows, animations } from '../styles/theme';
+import { animations, borderRadius, colors, spacing, typography } from '../styles/theme';
 
 const Dropdown = ({
   label,

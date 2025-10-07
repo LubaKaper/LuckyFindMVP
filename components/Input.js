@@ -24,12 +24,12 @@
 
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
 } from 'react-native';
-import { colors, typography, spacing, borderRadius, commonStyles } from '../styles/theme';
+import { borderRadius, colors, commonStyles, spacing, typography } from '../styles/theme';
 
 const Input = ({
   value,

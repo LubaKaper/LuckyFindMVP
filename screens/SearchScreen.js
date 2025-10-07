@@ -12,21 +12,21 @@
  * - Responsive design with smooth animations
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
-  View,
-  ScrollView,
-  StyleSheet,
-  Text,
-  Alert,
+    Alert,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from 'react-native';
 
 // Import custom components
-import { Input, Button, Dropdown } from '../components';
+import { Button, Dropdown, Input } from '../components';
 
 // Import API and theme
-import { advancedSearch, mockAdvancedSearch } from '../api/discogs';
-import { colors, typography, spacing, commonStyles, layout } from '../styles/theme';
+import { mockAdvancedSearch } from '../api/discogs';
+import { colors, commonStyles, spacing, typography } from '../styles/theme';
 
 /**
  * Main SearchScreen functional component

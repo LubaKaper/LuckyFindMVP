@@ -17,7 +17,6 @@
 
 import Constants from 'expo-constants';
 import { isAuthenticated, makeAuthenticatedRequest } from './oauth';
-import { RecordTypes } from '../types/Record.js';
 
 // Discogs API configuration
 const DISCOGS_BASE_URL = 'https://api.discogs.com';

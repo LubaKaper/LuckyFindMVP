@@ -192,12 +192,13 @@ const extractAlbumFromTitle = (title) => {
 };
 
 /**
- * Generic API request function with error handling
+ * Generic API request function with error handling and cancellation support
  * @param {string} url - API URL to fetch
  * @param {object} options - Fetch options
+ * @param {AbortSignal} [signal] - AbortController signal for cancellation
  * @returns {Promise<any>} - API response data
  */
-const apiRequest = async (url, options = {}) => {
+const apiRequest = async (url, options = {}, signal = null) => {
   try {
     console.log('🔄 Making API request to:', url);
     
@@ -210,6 +211,7 @@ const apiRequest = async (url, options = {}) => {
         // Add Authorization header when you have a token
         // 'Authorization': `Discogs token=${YOUR_DISCOGS_TOKEN}`,
       },
+      signal, // Add abort signal for cancellation
       ...options,
     };
     
@@ -233,6 +235,11 @@ const apiRequest = async (url, options = {}) => {
     return data;
     
   } catch (error) {
+    // Don't log abort errors as they're expected
+    if (error.name === 'AbortError') {
+      console.log('🔄 Request cancelled');
+      throw error;
+    }
     console.error('❌ API Request failed:', error.message);
     throw error;
   }

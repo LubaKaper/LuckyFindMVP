@@ -37,9 +37,8 @@ const SearchResultsScreen = () => {
   const [results, setResults] = useState(initialResults?.results || []);
   const [pagination, setPagination] = useState(initialResults?.pagination || {});
   const [currentPage, setCurrentPage] = useState(1);
-  const [loading, setLoading] = useState(false);  // Normalized name
-  const [isLoading, setIsLoading] = useState(false); // Backward compatibility
-  const [searchQuery, setSearchQuery] = useState(initialQuery || ''); // Will migrate to searchText
+  const [isLoading, setIsLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState(initialQuery || '');
   const [error, setError] = useState(null);
   
   // Derived state for schema compliance
@@ -73,7 +72,6 @@ const SearchResultsScreen = () => {
     if (!searchQuery.trim()) return;
 
     setIsLoading(true);
-    setLoading(true);   // Keep both in sync
     setError(null);
     setCurrentPage(1);
 
@@ -96,7 +94,6 @@ const SearchResultsScreen = () => {
       setError(err.message);
     } finally {
       setIsLoading(false);
-      setLoading(false);  // Keep both in sync
     }
   };
 
@@ -128,7 +125,6 @@ const SearchResultsScreen = () => {
       setError(err.message);
     } finally {
       setIsLoading(false);
-      setLoading(false);  // Keep both in sync
     }
   };
 

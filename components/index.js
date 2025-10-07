@@ -19,6 +19,11 @@ export { default as Dropdown } from './Dropdown';
 export { default as Input } from './Input';
 export { default as SearchResults } from './SearchResults';
 
+// Optimized Components for Performance  
+export {
+  ErrorMessage, LoadingSpinner, PaginationControls, RecordCard
+} from './OptimizedComponents';
+
 // Export all components as a single object for flexibility
 export default {
   Button: require('./Button').default,

@@ -17,12 +17,12 @@
 
 import React, { useEffect, useState } from 'react';
 import {
-    Animated,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Animated,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { animations, borderRadius, colors, spacing, typography } from '../styles/theme';
 
@@ -41,11 +41,18 @@ const Dropdown = ({
   
   // Effect to handle animation when dropdown opens/closes
   useEffect(() => {
-    Animated.timing(animationValue, {
+    const animation = Animated.timing(animationValue, {
       toValue: isOpen ? 1 : 0,
       duration: animations.base, // 300ms
       useNativeDriver: false, // Height animation requires layout changes
-    }).start();
+    });
+    
+    animation.start();
+    
+    // Cleanup function to stop animation on unmount
+    return () => {
+      animation.stop();
+    };
   }, [isOpen, animationValue]);
   
   // Interpolate animation value to height

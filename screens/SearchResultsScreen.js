@@ -12,20 +12,20 @@
  * - Loading states and error handling
  */
 
-import React, { useState, useEffect } from 'react';
+import { router, useLocalSearchParams } from 'expo-router';
+import React, { useState } from 'react';
 import {
-  ActivityIndicator,
-  FlatList,
-  Image,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    FlatList,
+    Image,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Input, Button } from '../components';
+import { Button, Input } from '../components';
 import { borderRadius, colors, shadows, spacing, typography } from '../styles/theme';
-import { router, useLocalSearchParams } from 'expo-router';
 
 const SearchResultsScreen = () => {
   const params = useLocalSearchParams();

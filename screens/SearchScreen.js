@@ -25,9 +25,9 @@ import {
 import { Button, Dropdown, Input } from '../components';
 
 // Import API and theme
+import { router } from 'expo-router';
 import { advancedSearch } from '../api/discogs';
 import { colors, commonStyles, spacing, typography } from '../styles/theme';
-import { router } from 'expo-router';
 
 /**
  * Main SearchScreen functional component

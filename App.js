@@ -11,15 +11,14 @@
  * - Smooth transitions and gestures
  */
 
-import React from 'react';
-import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { StatusBar } from 'expo-status-bar';
 
 // Import screens
-import SearchScreen from './screens/SearchScreen';
-import SearchResultsScreen from './screens/SearchResultsScreen';
 import RecordDetailScreen from './screens/RecordDetailScreen';
+import SearchResultsScreen from './screens/SearchResultsScreen';
+import SearchScreen from './screens/SearchScreen';
 
 // Import theme colors
 import { colors } from './styles/theme';

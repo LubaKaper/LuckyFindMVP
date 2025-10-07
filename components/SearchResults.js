@@ -15,15 +15,15 @@
 
 import React from 'react';
 import {
-  View,
-  Text,
-  FlatList,
-  StyleSheet,
-  Image,
-  TouchableOpacity,
-  ActivityIndicator,
+    ActivityIndicator,
+    FlatList,
+    Image,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
-import { colors, typography, spacing, borderRadius, shadows } from '../styles/theme';
+import { borderRadius, colors, shadows, spacing, typography } from '../styles/theme';
 
 const SearchResults = ({ 
   results, 

@@ -26,7 +26,6 @@ import { AuthButton, Button, Dropdown, Input, SearchResults } from '../component
 
 // Import API and theme
 import { advancedSearch } from '../api/discogs';
-import { isAuthenticated } from '../api/oauth';
 import { colors, commonStyles, spacing, typography } from '../styles/theme';
 
 /**

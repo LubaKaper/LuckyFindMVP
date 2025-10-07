@@ -13,18 +13,18 @@
  * - Logout functionality
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  Alert,
-  Linking,
-  StyleSheet,
-  Modal,
+    Alert,
+    Linking,
+    Modal,
+    StyleSheet,
+    Text,
+    View,
 } from 'react-native';
+import { getAccessToken, getRequestToken, isAuthenticated, logout } from '../api/oauth';
+import { borderRadius, colors, spacing, typography } from '../styles/theme';
 import { Button, Input } from './index';
-import { getRequestToken, getAccessToken, isAuthenticated, logout } from '../api/oauth';
-import { colors, typography, spacing, borderRadius } from '../styles/theme';
 
 const AuthButton = ({ onAuthChange }) => {
   const [isAuth, setIsAuth] = useState(false);

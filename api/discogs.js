@@ -14,8 +14,8 @@
  * - Mock data support for development
  */
 
-import { makeAuthenticatedRequest, isAuthenticated } from './oauth';
 import Constants from 'expo-constants';
+import { isAuthenticated, makeAuthenticatedRequest } from './oauth';
 
 // Discogs API configuration
 const DISCOGS_BASE_URL = 'https://api.discogs.com';

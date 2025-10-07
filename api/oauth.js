@@ -15,9 +15,9 @@
  * - Nonce and timestamp generation for security
  */
 
-import * as SecureStore from 'expo-secure-store';
-import * as Crypto from 'expo-crypto';
 import Constants from 'expo-constants';
+import * as Crypto from 'expo-crypto';
+import * as SecureStore from 'expo-secure-store';
 
 // OAuth 1.0a endpoints for Discogs API
 const OAUTH_ENDPOINTS = {

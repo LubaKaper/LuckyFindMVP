@@ -269,8 +269,8 @@ export const searchRecordsPublic = async (searchParams) => {
     
     // Prepare search parameters for Discogs API
     const params = {
-      // Main search query
-      q: searchParams.query || searchParams.searchQuery,
+      // Main search query - only include if not empty
+      ...(searchParams.query || searchParams.searchQuery ? { q: searchParams.query || searchParams.searchQuery } : {}),
       
       // Search type - focus on releases for vinyl records
       type: 'release',
@@ -278,9 +278,10 @@ export const searchRecordsPublic = async (searchParams) => {
       // Genre filter
       genre: searchParams.genre,
       
-      // Style/format filter
+      // Style/format filter - Discogs prefers 'style' parameter
       style: searchParams.style,
-      format: searchParams.format || searchParams.style,
+      // Don't duplicate with format unless specifically needed
+      ...(searchParams.format && !searchParams.style ? { format: searchParams.format } : {}),
       
       // Artist filter
       artist: searchParams.artist,
@@ -372,11 +373,21 @@ export const searchRecordsPublic = async (searchParams) => {
     
   } catch (error) {
     console.error('❌ Public search failed:', error.message);
+    console.error('❌ Error details:', {
+      status: error.status,
+      message: error.message,
+      hasToken: !!personalToken,
+      hasConsumerKey: !!consumerKey,
+    });
     
-    // Fallback to mock data if API authentication fails
+    // Force real API usage - disable mock fallback for production
+    console.warn('⚠️ Real API failed, but mock fallback is disabled');
+    console.warn('⚠️ Error details:', error.message);
+    
+    // Uncomment the lines below if you want mock data fallback:
+    /*
     if (error.message.includes('401') || error.message.includes('authenticate')) {
-      console.log('🔄 Falling back to mock data for development...');
-      // Convert searchParams to filters format for mock function
+      console.warn('⚠️ Authentication failed - using mock data for development');
       const filters = {
         searchQuery: searchParams.query || searchParams.searchQuery,
         genre: searchParams.genre,
@@ -388,7 +399,9 @@ export const searchRecordsPublic = async (searchParams) => {
       };
       return await mockAdvancedSearch(filters);
     }
+    */
     
+    // For other errors (network, rate limit, etc.), throw the error
     throw error;
   }
 };
@@ -826,15 +839,108 @@ export const mockSearchResults = {
 
 /**
  * Development/testing function that returns mock data
- * @param {object} filters - Search filters (unused in mock)
- * @returns {Promise<object>} - Mock search results
+ * Enhanced to filter results based on search criteria
+ * @param {object} filters - Search filters
+ * @returns {Promise<object>} - Filtered mock search results
  */
 export const mockAdvancedSearch = async (filters) => {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 1000));
   
   console.log('🔄 Mock search with filters:', filters);
-  return mockSearchResults;
+  
+  // Create additional techno/electronic records for testing
+  const additionalRecords = [
+    {
+      id: 101,
+      type: 'release',
+      title: 'Plastikman - Sheet One',
+      artist: 'Plastikman',
+      album: 'Sheet One',
+      thumb: 'https://via.placeholder.com/150x150/FFFF00/000000?text=Sheet+One',
+      cover_image: 'https://via.placeholder.com/500x500/FFFF00/000000?text=Sheet+One',
+      resource_url: 'https://api.discogs.com/releases/101',
+      year: '1993',
+      format: 'Vinyl, LP, Album',
+      formats: ['Vinyl', 'LP', 'Album'],
+      label: 'Plus 8',
+      labels: ['Plus 8'],
+      genre: 'Electronic',
+      genres: ['Electronic'],
+      style: 'Techno',
+      styles: ['Techno'],
+      country: 'Canada',
+      community: { want: 800, have: 1200 },
+    },
+    {
+      id: 102,
+      type: 'release',
+      title: 'Underground Resistance - Revolution For Change',
+      artist: 'Underground Resistance',
+      album: 'Revolution For Change',
+      thumb: 'https://via.placeholder.com/150x150/FFFF00/000000?text=Revolution',
+      cover_image: 'https://via.placeholder.com/500x500/FFFF00/000000?text=Revolution',
+      resource_url: 'https://api.discogs.com/releases/102',
+      year: '1992',
+      format: 'Vinyl, 12"',
+      formats: ['Vinyl', '12"'],
+      label: 'Underground Resistance',
+      labels: ['Underground Resistance'],
+      genre: 'Electronic',
+      genres: ['Electronic'],
+      style: 'Techno',
+      styles: ['Techno'],
+      country: 'US',
+      community: { want: 1500, have: 900 },
+    },
+  ];
+
+  // Combine original and additional records
+  const allRecords = [...mockSearchResults.results, ...additionalRecords];
+  
+  // Filter results based on search criteria
+  let filteredResults = allRecords;
+  
+  if (filters.style) {
+    filteredResults = filteredResults.filter(record => 
+      record.styles?.some(s => s.toLowerCase().includes(filters.style.toLowerCase())) ||
+      record.style?.toLowerCase().includes(filters.style.toLowerCase())
+    );
+  }
+  
+  if (filters.genre) {
+    filteredResults = filteredResults.filter(record => 
+      record.genres?.some(g => g.toLowerCase().includes(filters.genre.toLowerCase())) ||
+      record.genre?.toLowerCase().includes(filters.genre.toLowerCase())
+    );
+  }
+  
+  if (filters.artist) {
+    filteredResults = filteredResults.filter(record => 
+      record.artist?.toLowerCase().includes(filters.artist.toLowerCase())
+    );
+  }
+  
+  if (filters.searchQuery) {
+    const query = filters.searchQuery.toLowerCase();
+    filteredResults = filteredResults.filter(record => 
+      record.title?.toLowerCase().includes(query) ||
+      record.artist?.toLowerCase().includes(query) ||
+      record.album?.toLowerCase().includes(query)
+    );
+  }
+  
+  console.log(`🔄 Mock search filtered from ${allRecords.length} to ${filteredResults.length} results`);
+  
+  return {
+    ...mockSearchResults,
+    results: filteredResults,
+    pagination: {
+      ...mockSearchResults.pagination,
+      items: filteredResults.length,
+      pages: Math.ceil(filteredResults.length / 50),
+    }
+  };
 };
 
 // Export all functions for use in components

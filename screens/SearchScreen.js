@@ -229,7 +229,7 @@ const SearchScreen = () => {
       
       // Prepare search parameters (normalized schema)
       const searchParams = {
-        searchQuery: searchQuery.trim(),  // Will migrate to 'searchText'
+        searchQuery: searchQuery.trim() || undefined,  // Don't pass empty string
         genre: filters.genre,
         style: filters.style,
         artist: filters.artist,
@@ -244,6 +244,9 @@ const SearchScreen = () => {
       };
       
       console.log('🔍 Searching Discogs with parameters:', searchParams);
+      
+      // Debug: Log the exact search criteria being used
+      console.log('Search validation - Query:', !!searchQuery.trim(), 'Filters:', Object.entries(filters).filter(([k,v]) => v).map(([k,v]) => `${k}:${v}`));
       
       // Check if we need to filter by label release count
       const hasReleaseCountFilter = filters.maxReleases;

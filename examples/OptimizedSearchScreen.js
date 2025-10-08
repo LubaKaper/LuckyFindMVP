@@ -230,7 +230,7 @@ const OptimizedSearchScreen = () => {
               value={filters.artist}
               onChangeText={(text) => handleFilterUpdate('artist', text)}
               placeholder="Enter artist name..."
-              placeholderTextColor="rgba(223, 255, 0, 0.5)"
+              placeholderTextColor="rgba(255, 255, 0, 0.5)"
             />
           </View>
         </View>

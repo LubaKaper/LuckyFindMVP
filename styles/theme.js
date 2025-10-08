@@ -10,8 +10,8 @@ const { width, height } = Dimensions.get('window');
 // Color palette for the app
 export const colors = {
   // Primary colors
-  primary: '#DFFF00', // Chartreuse - used for accents, buttons, highlights
-  accent: '#DFFF00', // Chartreuse - accent color alias
+  primary: '#FFFF00', // Bright Yellow - used for accents, buttons, highlights
+  accent: '#FFFF00', // Bright Yellow - accent color alias
   background: '#000000', // Pure black - main background
   
   // Secondary colors
@@ -21,10 +21,10 @@ export const colors = {
   // Text colors
   text: '#FFFFFF', // White - primary text
   textSecondary: '#666666', // Gray - secondary text, placeholders
-  textAccent: '#DFFF00', // Chartreuse - accent text, labels
+  textAccent: '#FFFF00', // Bright Yellow - accent text, labels
   
   // Interactive states
-  border: '#DFFF00', // Chartreuse - borders, outlines
+  border: '#FFFF00', // Bright Yellow - borders, outlines
   borderSecondary: '#333333', // Dark gray - subtle borders
   
   // Status colors
@@ -89,19 +89,19 @@ export const borderRadius = {
 // Shadow configurations
 export const shadows = {
   sm: {
-    boxShadow: `0 1px 2px rgba(223, 255, 0, 0.1)`,
+    boxShadow: `0 1px 2px rgba(255, 255, 0, 0.1)`,
     elevation: 2,
   },
   base: {
-    boxShadow: `0 2px 4px rgba(223, 255, 0, 0.2)`,
+    boxShadow: `0 2px 4px rgba(255, 255, 0, 0.2)`,
     elevation: 3,
   },
   md: {
-    boxShadow: `0 3px 5px rgba(223, 255, 0, 0.25)`,
+    boxShadow: `0 3px 5px rgba(255, 255, 0, 0.25)`,
     elevation: 4,
   },
   lg: {
-    boxShadow: `0 4px 6px rgba(223, 255, 0, 0.3)`,
+    boxShadow: `0 4px 6px rgba(255, 255, 0, 0.3)`,
     elevation: 5,
   },
 };
@@ -136,6 +136,7 @@ export const commonStyles = {
   
   contentContainer: {
     padding: spacing.lg,
+    paddingTop: spacing.lg,    // Consistent top padding
     paddingBottom: spacing.xxxl,
   },
   

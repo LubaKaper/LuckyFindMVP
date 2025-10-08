@@ -12,7 +12,20 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: '#000000',     // Black for active text/icons
+        tabBarInactiveTintColor: '#000000',   // Black for inactive text/icons  
+        tabBarStyle: {
+          backgroundColor: '#FFFF00',         // Bright Yellow background
+          borderTopColor: '#FFFF00',          // Bright Yellow border
+          borderTopWidth: 0,                  // Remove border for cleaner look
+          paddingVertical: 8,                 // Add some vertical padding
+          height: 88,                         // Standard tab bar height
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '600',
+          color: '#000000',                   // Black text
+        },
         headerShown: false,
         tabBarButton: HapticTab,
       }}>

@@ -21,6 +21,7 @@ import {
     TextInput,
     View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Import custom components
 import { Button, Dropdown, Input } from '../components';
@@ -383,14 +384,15 @@ const SearchScreen = () => {
   };
   
   return (
-    <View style={styles.container}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.contentContainer}
-        showsVerticalScrollIndicator={false}
-        onScrollBeginDrag={handleScroll}
-        keyboardShouldPersistTaps="handled"
-      >
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.contentContainer}
+          showsVerticalScrollIndicator={false}
+          onScrollBeginDrag={handleScroll}
+          keyboardShouldPersistTaps="handled"
+        >
         {/* Screen Title */}
         <Text style={styles.title}>Search Records</Text>
         
@@ -476,7 +478,7 @@ const SearchScreen = () => {
               value={filters.artist}
               onChangeText={(text) => updateFilter('artist', text)}
               placeholder="Enter artist name..."
-              placeholderTextColor="rgba(223, 255, 0, 0.5)"
+              placeholderTextColor="rgba(255, 255, 0, 0.5)"
             />
           </View>
           
@@ -552,7 +554,7 @@ const SearchScreen = () => {
               value={filters.maxReleases}
               onChangeText={(text) => updateFilter('maxReleases', text)}
               placeholder="e.g. 1000 (optional)"
-              placeholderTextColor="rgba(223, 255, 0, 0.5)"
+              placeholderTextColor="rgba(255, 255, 0, 0.5)"
               keyboardType="numeric"
             />
           </View>
@@ -578,14 +580,21 @@ const SearchScreen = () => {
           />
         </View>
       </ScrollView>
-    </View>
+      </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  // Safe area container
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  
   // Main container
   container: {
-    ...commonStyles.container,
+    flex: 1,
   },
   
   // Scroll view
@@ -595,6 +604,7 @@ const styles = StyleSheet.create({
   
   contentContainer: {
     ...commonStyles.contentContainer,
+    paddingTop: spacing.xl, // Extra top padding for better visibility
   },
   
   // Title

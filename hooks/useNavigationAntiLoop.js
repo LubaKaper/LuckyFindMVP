@@ -11,8 +11,8 @@
  * - Performance optimized with useCallback
  */
 
-import { useCallback, useMemo } from 'react';
 import { router } from 'expo-router';
+import { useCallback, useMemo } from 'react';
 import navigationStateManager from '../utils/NavigationStateManager';
 
 /**

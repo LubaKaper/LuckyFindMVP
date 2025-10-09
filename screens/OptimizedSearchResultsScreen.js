@@ -15,21 +15,20 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Dimensions,
-  FlatList,
-  Image,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    Dimensions,
+    FlatList,
+    Image,
+    Pressable,
+    StyleSheet,
+    Text,
+    View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useApiRequest } from '../hooks/useApiRequest';
 import { colors, spacing, typography } from '../styles/theme';
 import { formatPrice } from '../utils/format';
-import { useApiRequest } from '../hooks/useApiRequest';
 
 // ==========================================
 // OPTIMIZED COMPONENTS

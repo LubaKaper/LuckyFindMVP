@@ -13,8 +13,8 @@
  * - Pull-to-refresh functionality
  */
 
-import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
-import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     FlatList,
@@ -29,10 +29,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getLabelReleases } from '../api/discogs';
 import { useApiRequest } from '../hooks/useApiRequest';
-import { borderRadius, colors, shadows, spacing, typography } from '../styles/theme';
-import navigationStateManager from '../utils/NavigationStateManager';
-import apiRequestManager from '../utils/APIRequestManager';
 import useNavigationAntiLoop from '../hooks/useNavigationAntiLoop';
+import { borderRadius, colors, shadows, spacing, typography } from '../styles/theme';
+import apiRequestManager from '../utils/APIRequestManager';
+import navigationStateManager from '../utils/NavigationStateManager';
 
 const LabelReleasesScreen = () => {
   const params = useLocalSearchParams();

@@ -11,7 +11,7 @@
  */
 
 import { router } from 'expo-router';
-import React, { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
 import {
     Alert,
     ScrollView,
@@ -22,8 +22,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Import optimized components and hooks
-import { Button, Input, OptimizedDropdown } from '../components';
 import { advancedSearch, searchLabelsByReleaseCount } from '../api/discogs';
+import { Button, Input, OptimizedDropdown } from '../components';
 import { useApiRequest } from '../hooks/useApiRequest';
 import { useDebounce } from '../hooks/useDebounce';
 import { colors, spacing, typography } from '../styles/theme';

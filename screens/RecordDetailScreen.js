@@ -12,7 +12,7 @@
  * - Responsive layout for different screen sizes
  */
 
-import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useMemo } from 'react';
 import {
     Image,
@@ -23,9 +23,9 @@ import {
     View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import useNavigationAntiLoop from '../hooks/useNavigationAntiLoop';
 import { borderRadius, colors, shadows, spacing, typography } from '../styles/theme';
 import navigationStateManager from '../utils/NavigationStateManager';
-import useNavigationAntiLoop from '../hooks/useNavigationAntiLoop';
 
 const RecordDetailScreen = () => {
   const params = useLocalSearchParams();

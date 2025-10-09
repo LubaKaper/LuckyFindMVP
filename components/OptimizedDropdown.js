@@ -13,14 +13,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Animated,
-  Dimensions,
-  FlatList,
-  Modal,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
+    Animated,
+    Dimensions,
+    FlatList,
+    Modal,
+    Pressable,
+    StyleSheet,
+    Text,
+    View,
 } from 'react-native';
 
 import { colors, spacing, typography } from '../styles/theme';

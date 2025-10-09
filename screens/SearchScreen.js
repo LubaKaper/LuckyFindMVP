@@ -47,6 +47,9 @@ const SearchScreen = () => {
   // Loading state for API calls
   const [isLoading, setIsLoading] = useState(false);
   
+  // Rate limit status
+  const [showRateLimitWarning, setShowRateLimitWarning] = useState(false);
+  
   // Dropdown open/close state management
   const [openDropdown, setOpenDropdown] = useState(null);
   
@@ -340,13 +343,16 @@ const SearchScreen = () => {
       let errorTitle = 'Search Error';
       let errorMessage = 'Failed to search records. Please try again.';
       
-      if (error.message.includes('Authentication')) {
+      if (error.message.includes('Authentication') || error.message.includes('401')) {
         errorTitle = 'Authentication Error';
-        errorMessage = 'Please log out and log back in to Discogs.';
-      } else if (error.message.includes('Rate limit')) {
-        errorTitle = 'Too Many Requests';
-        errorMessage = 'Please wait a moment before searching again.';
-      } else if (error.message.includes('Network')) {
+        errorMessage = 'There was an issue with API authentication. Please try again in a moment.';
+      } else if (error.message.includes('Rate limit') || error.message.includes('429')) {
+        errorTitle = 'Rate Limit Reached';
+        errorMessage = 'The Discogs API is temporarily limiting requests. Please wait 30-60 seconds before searching again. The app automatically retries with delays to prevent this.';
+        setShowRateLimitWarning(true);
+        // Hide the warning after 30 seconds
+        setTimeout(() => setShowRateLimitWarning(false), 30000);
+      } else if (error.message.includes('Network') || error.message.includes('fetch')) {
         errorTitle = 'Network Error';
         errorMessage = 'Please check your internet connection and try again.';
       }
@@ -403,6 +409,15 @@ const SearchScreen = () => {
         <Text style={styles.searchDescription}>
           Search millions of records in the world's largest music database.
         </Text>
+        
+        {/* Rate Limit Warning */}
+        {showRateLimitWarning && (
+          <View style={styles.rateLimitWarning}>
+            <Text style={styles.rateLimitText}>
+              ⏳ API rate limit active. Searches are temporarily slowed to prevent errors.
+            </Text>
+          </View>
+        )}
         
         {/* Authentication Section - Hidden for now */}
         {false && (
@@ -742,6 +757,23 @@ const styles = StyleSheet.create({
   resultsContainer: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  
+  // Rate limit warning
+  rateLimitWarning: {
+    backgroundColor: colors.warning || '#FFF3CD',
+    borderColor: colors.accent,
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: spacing.sm,
+    marginBottom: spacing.base,
+  },
+  
+  rateLimitText: {
+    color: colors.warningText || '#856404',
+    fontSize: typography.fontSize.sm,
+    textAlign: 'center',
+    fontWeight: typography.fontWeight.medium,
   },
 });
 

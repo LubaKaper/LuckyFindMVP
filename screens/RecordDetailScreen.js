@@ -12,8 +12,8 @@
  * - Responsive layout for different screen sizes
  */
 
-import { router, useLocalSearchParams } from 'expo-router';
-import React from 'react';
+import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
+import React, { useCallback, useMemo } from 'react';
 import {
     Image,
     ScrollView,
@@ -24,17 +24,52 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { borderRadius, colors, shadows, spacing, typography } from '../styles/theme';
+import navigationStateManager from '../utils/NavigationStateManager';
+import useNavigationAntiLoop from '../hooks/useNavigationAntiLoop';
 
 const RecordDetailScreen = () => {
   const params = useLocalSearchParams();
   const record = params.record ? JSON.parse(params.record) : null;
 
+  // Memoize record ID to prevent unnecessary re-computations
+  const recordId = useMemo(() => {
+    return record?.id || record?.title || 'unknown';
+  }, [record]);
+
+  // Initialize navigation anti-loop hook
+  const {
+    navigateToLabel,
+    isLabelClickable,
+    navigationContext
+  } = useNavigationAntiLoop({
+    currentScreenType: 'RecordDetail',
+    currentItemId: recordId,
+    currentItemData: record
+  });
+
+  // Register this screen in navigation state manager when focused
+  useFocusEffect(
+    useCallback(() => {
+      if (record) {
+        navigationStateManager.setCurrentScreen('RecordDetail', recordId, {
+          title: record.title,
+          label: record.label
+        });
+      }
+      
+      // Cleanup on blur (optional - helps with debugging)
+      return () => {
+        console.log('📍 RecordDetail screen blurred');
+      };
+    }, [record, recordId])
+  );
+
   /**
    * Navigate back to previous screen
    */
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     router.back();
-  };
+  }, []);
 
   /**
    * Format price for display
@@ -52,6 +87,19 @@ const RecordDetailScreen = () => {
     if (Array.isArray(data)) return data.join(', ');
     return data;
   };
+
+  /**
+   * Handle label tap - navigate to label releases screen
+   * Uses the navigation anti-loop hook for clean, reusable logic
+   */
+  const handleLabelPress = useCallback((labelData) => {
+    navigateToLabel(labelData, {
+      fromRecordId: recordId,
+      metadata: {
+        fromRecordTitle: record?.title
+      }
+    });
+  }, [navigateToLabel, record, recordId]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -127,11 +175,27 @@ const RecordDetailScreen = () => {
               </View>
             )}
 
-            {/* Label */}
+            {/* Label - Conditionally Clickable */}
             {record.label && (
               <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>Label:</Text>
-                <Text style={styles.detailValue}>{formatArrayData(record.label)}</Text>
+                {isLabelClickable(record.label) ? (
+                  // Show clickable label
+                  <TouchableOpacity 
+                    onPress={() => handleLabelPress(record.label)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.detailValue, styles.clickableLabel]}>
+                      {formatArrayData(record.label)} →
+                    </Text>
+                  </TouchableOpacity>
+                ) : (
+                  // Show non-clickable label (prevents infinite loop)
+                  <Text style={styles.detailValue}>
+                    {formatArrayData(record.label)}
+                    <Text style={styles.labelContext}> (current label)</Text>
+                  </Text>
+                )}
               </View>
             )}
 
@@ -343,6 +407,17 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: typography.fontSize.sm,
     flex: 1,
+  },
+
+  clickableLabel: {
+    color: colors.accent,
+    textDecorationLine: 'underline',
+  },
+
+  labelContext: {
+    color: colors.textSecondary,
+    fontSize: typography.fontSize.xs,
+    fontStyle: 'italic',
   },
 
   // Community Section

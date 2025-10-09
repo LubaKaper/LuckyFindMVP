@@ -13,10 +13,27 @@
  * - Rate limiting and error handling
  * - Mock data support for development
  * - Normalized data schema with backward compatibility
+ * - Request throttling and automatic retry with backoff
  */
 
 import Constants from 'expo-constants';
 import { isAuthenticated, makeAuthenticatedRequest } from './oauth';
+
+// Rate limiting configuration
+const RATE_LIMIT_CONFIG = {
+  MAX_REQUESTS_PER_MINUTE: 60, // Discogs allows 60 requests per minute
+  REQUEST_INTERVAL: 1000, // Minimum 1 second between requests
+  RETRY_ATTEMPTS: 3,
+  BACKOFF_MULTIPLIER: 2,
+  INITIAL_BACKOFF: 2000, // Start with 2 second delay
+};
+
+// Request queue and rate limiting state
+let requestQueue = [];
+let isProcessingQueue = false;
+let lastRequestTime = 0;
+let requestCount = 0;
+let requestWindowStart = Date.now();
 
 // Discogs API configuration
 const DISCOGS_BASE_URL = 'https://api.discogs.com';
@@ -28,6 +45,90 @@ const ENDPOINTS = {
   artist: '/artists',
   label: '/labels',
   master: '/masters',
+};
+
+/**
+ * Rate limiting utilities
+ */
+
+/**
+ * Sleep utility for delays
+ */
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * Check if we're within rate limits
+ */
+const checkRateLimit = () => {
+  const now = Date.now();
+  
+  // Reset window if it's been more than a minute
+  if (now - requestWindowStart > 60000) {
+    requestCount = 0;
+    requestWindowStart = now;
+  }
+  
+  return requestCount < RATE_LIMIT_CONFIG.MAX_REQUESTS_PER_MINUTE;
+};
+
+/**
+ * Wait for rate limit compliance
+ */
+const waitForRateLimit = async () => {
+  const now = Date.now();
+  const timeSinceLastRequest = now - lastRequestTime;
+  
+  // Ensure minimum interval between requests
+  if (timeSinceLastRequest < RATE_LIMIT_CONFIG.REQUEST_INTERVAL) {
+    const waitTime = RATE_LIMIT_CONFIG.REQUEST_INTERVAL - timeSinceLastRequest;
+    console.log(`⏱️ Rate limiting: waiting ${waitTime}ms`);
+    await sleep(waitTime);
+  }
+  
+  // Wait if we've exceeded requests per minute
+  if (!checkRateLimit()) {
+    const waitTime = 60000 - (Date.now() - requestWindowStart);
+    console.log(`⏳ Rate limit exceeded: waiting ${Math.ceil(waitTime/1000)}s`);
+    await sleep(waitTime);
+    requestCount = 0;
+    requestWindowStart = Date.now();
+  }
+};
+
+/**
+ * Execute a request with rate limiting and retry logic
+ */
+const executeRateLimitedRequest = async (requestFn, attempt = 1) => {
+  try {
+    await waitForRateLimit();
+    
+    lastRequestTime = Date.now();
+    requestCount++;
+    
+    const result = await requestFn();
+    return result;
+    
+  } catch (error) {
+    console.error(`🔄 Request attempt ${attempt} failed:`, error.message);
+    
+    // Check if it's a rate limit error
+    if (error.message.includes('Rate limit') || error.message.includes('429')) {
+      if (attempt <= RATE_LIMIT_CONFIG.RETRY_ATTEMPTS) {
+        const backoffTime = RATE_LIMIT_CONFIG.INITIAL_BACKOFF * Math.pow(RATE_LIMIT_CONFIG.BACKOFF_MULTIPLIER, attempt - 1);
+        console.log(`⏰ Rate limited: retrying in ${backoffTime/1000}s (attempt ${attempt}/${RATE_LIMIT_CONFIG.RETRY_ATTEMPTS})`);
+        
+        await sleep(backoffTime);
+        return executeRateLimitedRequest(requestFn, attempt + 1);
+      } else {
+        console.error('❌ Max retry attempts reached for rate limiting');
+        // Fall back to mock data after all retries
+        throw new Error('Rate limit exceeded - using mock data');
+      }
+    }
+    
+    // For other errors, throw immediately
+    throw error;
+  }
 };
 
 /**
@@ -335,26 +436,28 @@ export const searchRecordsPublic = async (searchParams) => {
       console.warn('⚠️ No authentication credentials found, API may fail');
     }
     
-    // Make API request
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: headers,
+    // Make rate-limited API request
+    const data = await executeRateLimitedRequest(async () => {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: headers,
+      });
+      
+      // Handle rate limiting
+      if (response.status === 429) {
+        console.warn('⚠️ Rate limit reached, please wait before making more requests');
+        throw new Error('Rate limit exceeded. Please try again in a moment.');
+      }
+      
+      // Handle errors
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Public API Error:', response.status, errorText);
+        throw new Error(`API Error: ${response.status} - ${errorText}`);
+      }
+      
+      return await response.json();
     });
-    
-    // Handle rate limiting
-    if (response.status === 429) {
-      console.warn('⚠️ Rate limit reached, please wait before making more requests');
-      throw new Error('Rate limit exceeded. Please try again in a moment.');
-    }
-    
-    // Handle errors
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ Public API Error:', response.status, errorText);
-      throw new Error(`API Error: ${response.status} - ${errorText}`);
-    }
-    
-    const data = await response.json();
     console.log('✅ Public search successful, found', data.results?.length || 0, 'results');
     
     // Transform results to our format
@@ -559,6 +662,38 @@ export const getLabelInfo = async (labelId) => {
 };
 
 /**
+ * Get releases from a specific label
+ * @param {string} labelName - Label name to search for
+ * @param {number} page - Page number for pagination
+ * @param {number} perPage - Results per page
+ * @returns {Promise<SearchResponse>} - Label releases with pagination
+ */
+export const getLabelReleases = async (labelName, page = 1, perPage = 50) => {
+  try {
+    console.log('🏷️ Getting releases for label:', labelName);
+    
+    // Search for releases by this specific label
+    const searchParams = {
+      label: labelName,
+      type: 'release',
+      page: page,
+      per_page: Math.min(perPage, 100), // Discogs max is 100
+    };
+    
+    // Use the existing search function
+    const results = await searchRecordsPublic(searchParams);
+    
+    console.log(`✅ Found ${results.results?.length || 0} releases for label "${labelName}"`);
+    
+    return results;
+    
+  } catch (error) {
+    console.error('❌ Get label releases failed:', error.message);
+    throw new Error(`Failed to get releases for label "${labelName}": ${error.message}`);
+  }
+};
+
+/**
  * Search for labels and get their release counts
  * @param {string} labelQuery - Label search query
  * @param {number} minReleases - Minimum number of releases
@@ -590,12 +725,20 @@ export const searchLabelsByReleaseCount = async (labelQuery = '', minReleases = 
       headers['Authorization'] = `Discogs token=${personalToken}`;
     }
     
-    const response = await fetch(url, { headers });
-    const data = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(data.message || `HTTP ${response.status}`);
-    }
+    const data = await executeRateLimitedRequest(async () => {
+      const response = await fetch(url, { headers });
+      
+      if (response.status === 429) {
+        throw new Error('Rate limit exceeded. Please try again in a moment.');
+      }
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `HTTP ${response.status}`);
+      }
+      
+      return await response.json();
+    });
     
     // Filter labels by release count
     const filteredLabels = (data.results || []).filter(label => {
@@ -949,6 +1092,7 @@ export default {
   getReleaseDetails,
   getArtistInfo,
   getLabelInfo,
+  getLabelReleases,
   searchLabelsByReleaseCount,
   advancedSearch,
   getSuggestions,

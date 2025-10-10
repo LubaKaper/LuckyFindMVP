@@ -1,5 +1,5 @@
-import { useLocalSearchParams } from 'expo-router';
 import SearchResultsScreen from '@/screens/SearchResultsScreen';
+import { useLocalSearchParams } from 'expo-router';
 
 export default function SearchResultsPage() {
   const params = useLocalSearchParams();

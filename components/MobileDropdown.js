@@ -9,7 +9,7 @@
  */
 
 import { Ionicons } from '@expo/vector-icons';
-import React, { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import {
     Pressable,
     ScrollView,

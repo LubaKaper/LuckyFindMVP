@@ -13,17 +13,17 @@
 import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
 import {
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Import optimized components and hooks
 import { advancedSearch, searchLabelsByReleaseCount } from '../api/discogs';
-import { Button, Input, Dropdown } from '../components';
+import { Button, Dropdown, Input } from '../components';
 import { useApiRequest } from '../hooks/useApiRequest';
 import { useDebounce } from '../hooks/useDebounce';
 import { colors, spacing, typography } from '../styles/theme';

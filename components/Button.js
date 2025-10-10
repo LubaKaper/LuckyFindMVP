@@ -20,12 +20,12 @@
 
 import React, { useState } from 'react';
 import {
-    ActivityIndicator,
-    Animated,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Animated,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import sophisticatedTheme from '../styles/sophisticatedTheme';
 

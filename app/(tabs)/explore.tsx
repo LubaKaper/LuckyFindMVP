@@ -1,7 +1,7 @@
-import React from 'react';
-import { ScrollView, View, Text, StyleSheet, Dimensions } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import sophisticatedTheme from '@/styles/sophisticatedTheme';
+import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
+import { Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 const { width } = Dimensions.get('window');
 const { colors, spacing, typography, shadows, borderRadius } = sophisticatedTheme;

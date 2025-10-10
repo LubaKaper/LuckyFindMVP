@@ -4,8 +4,8 @@
  */
 
 import React from 'react';
-import { View, Text } from 'react-native';
-import Svg, { Circle, Line, Rect, Path, G } from 'react-native-svg';
+import { Text, View } from 'react-native';
+import Svg, { Circle, Line, Path, Rect } from 'react-native-svg';
 import { sophisticatedColors } from '../styles/sophisticatedTheme';
 
 // Main Vinyl Record Icon

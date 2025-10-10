@@ -24,10 +24,10 @@
 
 import React, { useState } from 'react';
 import {
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from 'react-native';
 import sophisticatedTheme from '../styles/sophisticatedTheme';
 

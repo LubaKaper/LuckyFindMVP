@@ -24,7 +24,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 // Import optimized components and hooks
 import { advancedSearch, searchLabelsByReleaseCount } from '../api/discogs';
 import { Button, Dropdown, Input } from '../components';
-import { AppLogo, SearchRecordIcon, EqualizerIcon } from '../components/SophisticatedIcons';
+import { AppLogo, EqualizerIcon, SearchRecordIcon } from '../components/SophisticatedIcons';
 import { useApiRequest } from '../hooks/useApiRequest';
 import { useDebounce } from '../hooks/useDebounce';
 import sophisticatedTheme from '../styles/sophisticatedTheme';

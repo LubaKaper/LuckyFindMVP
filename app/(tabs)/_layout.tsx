@@ -2,28 +2,36 @@ import { Tabs } from 'expo-router';
 import React from 'react';
 
 import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { SearchRecordIcon, VinylRecordIcon } from '@/components/SophisticatedIcons';
+import sophisticatedTheme from '@/styles/sophisticatedTheme';
+
+const { colors, spacing, typography } = sophisticatedTheme;
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#000000',     // Black for active text/icons
-        tabBarInactiveTintColor: '#000000',   // Black for inactive text/icons  
+        tabBarActiveTintColor: colors.accent,        // Coral for active text/icons
+        tabBarInactiveTintColor: colors.text,        // Light blue for inactive text/icons  
         tabBarStyle: {
-          backgroundColor: '#FFFF00',         // Bright Yellow background
-          borderTopColor: '#FFFF00',          // Bright Yellow border
-          borderTopWidth: 0,                  // Remove border for cleaner look
-          paddingVertical: 8,                 // Add some vertical padding
-          height: 88,                         // Standard tab bar height
+          backgroundColor: colors.background,         // Navy background
+          borderTopColor: colors.border,              // Sophisticated border
+          borderTopWidth: 1,                          // Subtle border
+          paddingVertical: spacing.sm,                // Sophisticated spacing
+          height: 88,                                 // Standard tab bar height
+          shadowColor: colors.background,
+          shadowOffset: {
+            width: 0,
+            height: -2,
+          },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+          elevation: 8,
         },
         tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '600',
-          color: '#000000',                   // Black text
+          fontSize: typography.fontSize.xs,
+          fontWeight: '600' as const,
+          marginTop: 2,
         },
         headerShown: false,
         tabBarButton: HapticTab,
@@ -32,14 +40,14 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Search',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="magnifyingglass" color={color} />,
+          tabBarIcon: ({ focused }) => <SearchRecordIcon size={28} />,
         }}
       />
       <Tabs.Screen
         name="explore"
         options={{
           title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          tabBarIcon: ({ focused }) => <VinylRecordIcon size={28} animated={focused} />,
         }}
       />
     </Tabs>

@@ -25,8 +25,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import useNavigationAntiLoop from '../hooks/useNavigationAntiLoop';
-import { borderRadius, colors, shadows, spacing, typography } from '../styles/theme';
+import sophisticatedTheme from '../styles/sophisticatedTheme';
 import navigationStateManager from '../utils/NavigationStateManager';
+
+const { colors, spacing, typography, shadows, borderRadius } = sophisticatedTheme;
 
 const RecordDetailScreen = () => {
   const params = useLocalSearchParams();
@@ -291,7 +293,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing.base,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.borderSecondary,
@@ -300,7 +302,7 @@ const styles = StyleSheet.create({
   backButton: {
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.sm,
-    borderRadius: borderRadius.base,
+    borderRadius: borderRadius.md,
   },
 
   backButtonText: {
@@ -407,8 +409,8 @@ const styles = StyleSheet.create({
   infoCard: {
     flex: 1,
     backgroundColor: colors.backgroundSecondary,
-    padding: spacing.base,
-    borderRadius: borderRadius.base,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
     ...shadows.sm,
   },
@@ -429,8 +431,8 @@ const styles = StyleSheet.create({
   // Details
   detailsContainer: {
     backgroundColor: colors.backgroundSecondary,
-    borderRadius: borderRadius.base,
-    padding: spacing.base,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
     marginBottom: spacing.lg,
     ...shadows.sm,
   },
@@ -486,8 +488,8 @@ const styles = StyleSheet.create({
   statCard: {
     flex: 1,
     backgroundColor: colors.backgroundSecondary,
-    padding: spacing.base,
-    borderRadius: borderRadius.base,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
     ...shadows.sm,
   },
@@ -507,8 +509,8 @@ const styles = StyleSheet.create({
   // Pricing Section
   pricingSection: {
     backgroundColor: colors.backgroundSecondary,
-    padding: spacing.base,
-    borderRadius: borderRadius.base,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
     ...shadows.sm,
   },

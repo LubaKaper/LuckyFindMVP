@@ -18,7 +18,9 @@ import {
   View,
 } from 'react-native';
 
-import { spacing, typography } from '../styles/theme';
+import sophisticatedTheme from '../styles/sophisticatedTheme';
+
+const { colors, spacing, typography, shadows } = sophisticatedTheme;
 
 /**
  * Simple Option Item Component
@@ -180,14 +182,14 @@ const MobileDropdown = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: spacing.xl, // More space between dropdowns
-    position: 'relative', // Important for absolute positioning
+    marginBottom: spacing.xl,
+    position: 'relative',
   },
 
   label: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
-    color: '#FFFFFF', // White label
+    color: colors.text,
     marginBottom: spacing.xs,
   },
 
@@ -196,70 +198,69 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    backgroundColor: '#1a1a1a', // Dark background
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#333333', // Dark border
-    borderRadius: 8,
+    borderColor: colors.border,
+    borderRadius: 12,
     minHeight: 48,
+    ...shadows.sm,
   },
 
   dropdownButtonActive: {
-    borderColor: '#FFFF00', // Yellow border when open
-    backgroundColor: '#2a2a2a', // Slightly lighter when open
+    borderColor: colors.accent,
+    backgroundColor: colors.surfaceElevated,
+    ...shadows.md,
   },
 
   dropdownButtonDisabled: {
-    backgroundColor: '#0a0a0a',
-    borderColor: '#666666',
+    backgroundColor: colors.backgroundSecondary,
+    borderColor: colors.borderLight,
     opacity: 0.6,
   },
 
   dropdownButtonError: {
-    borderColor: '#F44336', // Red border for errors
+    borderColor: colors.error,
   },
 
   dropdownButtonText: {
     flex: 1,
     fontSize: typography.fontSize.base,
-    color: '#FFFFFF', // White text
+    color: colors.text,
     marginRight: spacing.xs,
   },
 
   placeholderText: {
-    color: '#CCCCCC', // Light gray for placeholder
+    color: colors.textSecondary,
     fontStyle: 'italic',
   },
 
   disabledText: {
-    color: '#666666', // Gray for disabled
+    color: colors.textTertiary,
   },
 
   // Error Styles
   errorText: {
     fontSize: typography.fontSize.xs,
-    color: '#F44336', // Red error text
+    color: colors.error,
     marginTop: spacing.xs,
   },
 
   // Options Container - Simple View instead of Modal
   optionsContainer: {
     position: 'absolute',
-    top: '100%', // Position below the button
+    top: '100%',
     left: 0,
     right: 0,
-    backgroundColor: '#2a2a2a', // Dark background
+    backgroundColor: colors.surfaceElevated,
     borderWidth: 1,
-    borderColor: '#FFFF00', // Yellow border
-    borderRadius: 8,
-    maxHeight: 200, // Limit height
-    zIndex: 9999, // Very high z-index to appear above everything
-    elevation: 20, // High elevation for Android
-    shadowColor: '#000', // iOS shadow
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
+    borderColor: colors.accent,
+    borderRadius: 12,
+    maxHeight: 200,
+    zIndex: 9999,
+    elevation: 20,
+    ...shadows.lg,
   },
 
   optionsList: {
@@ -270,11 +271,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.base,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     minHeight: 48,
     borderBottomWidth: 1,
-    borderBottomColor: '#333333', // Dark separator
+    borderBottomColor: colors.border,
   },
 
   optionItemLast: {
@@ -282,17 +283,17 @@ const styles = StyleSheet.create({
   },
 
   optionItemSelected: {
-    backgroundColor: '#FFFF0033', // Yellow with transparency
+    backgroundColor: colors.accent + '20',
   },
 
   optionText: {
     flex: 1,
     fontSize: typography.fontSize.base,
-    color: '#FFFFFF', // White text
+    color: colors.text,
   },
 
   optionTextSelected: {
-    color: '#FFFF00', // Yellow for selected
+    color: colors.accent,
     fontWeight: typography.fontWeight.medium,
   },
 
@@ -304,7 +305,7 @@ const styles = StyleSheet.create({
 
   emptyText: {
     fontSize: typography.fontSize.base,
-    color: '#CCCCCC', // Light gray
+    color: colors.textSecondary,
     textAlign: 'center',
     fontStyle: 'italic',
   },

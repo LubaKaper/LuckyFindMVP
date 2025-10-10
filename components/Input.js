@@ -29,7 +29,9 @@ import {
     TextInput,
     View,
 } from 'react-native';
-import { borderRadius, colors, commonStyles, spacing, typography } from '../styles/theme';
+import sophisticatedTheme from '../styles/sophisticatedTheme';
+
+const { colors, spacing, typography, shadows } = sophisticatedTheme;
 
 const Input = ({
   value,
@@ -143,29 +145,33 @@ const Input = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: spacing.base, // 16px margin between inputs
+    marginBottom: spacing.md,
   },
   
   // Label styles
   label: {
-    ...commonStyles.label,
-    marginBottom: spacing.sm, // 8px spacing below label
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
   
   // Input container styles
   inputContainer: {
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: borderRadius.lg,
-    backgroundColor: colors.backgroundSecondary,
-    paddingHorizontal: spacing.base, // 16px horizontal padding
-    paddingVertical: spacing.sm, // 8px vertical padding
-    minHeight: 48, // Consistent touch target size
+    borderRadius: 12,
+    backgroundColor: colors.surface,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    minHeight: 48,
+    ...shadows.sm,
   },
   
   inputContainerFocused: {
-    borderColor: colors.primary,
-    borderWidth: 2, // Thicker border when focused
+    borderColor: colors.accent,
+    borderWidth: 2,
+    ...shadows.md,
   },
   
   inputContainerError: {
@@ -174,18 +180,18 @@ const styles = StyleSheet.create({
   },
   
   inputContainerDisabled: {
-    backgroundColor: colors.backgroundTertiary,
-    borderColor: colors.borderSecondary,
+    backgroundColor: colors.backgroundSecondary,
+    borderColor: colors.borderLight,
     opacity: 0.6,
   },
   
   // Input text styles
   input: {
-    ...commonStyles.body,
-    color: colors.accent, // Yellow text for better visibility
-    padding: 0, // Remove default padding to use container padding
-    margin: 0, // Remove default margin
-    textAlignVertical: 'center', // Center text vertically
+    fontSize: typography.fontSize.base,
+    color: colors.text,
+    padding: 0,
+    margin: 0,
+    textAlignVertical: 'center',
   },
   
   inputDisabled: {
@@ -193,9 +199,9 @@ const styles = StyleSheet.create({
   },
   
   inputMultiline: {
-    textAlignVertical: 'top', // Align text to top for multiline
-    paddingTop: spacing.sm, // Add top padding for multiline
-    paddingBottom: spacing.sm, // Add bottom padding for multiline
+    textAlignVertical: 'top',
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.sm,
   },
   
   // Error text styles
@@ -203,8 +209,8 @@ const styles = StyleSheet.create({
     color: colors.error,
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.normal,
-    marginTop: spacing.xs, // 4px spacing above error text
-    marginLeft: spacing.xs, // 4px left margin to align with input
+    marginTop: spacing.xs,
+    marginLeft: spacing.xs,
   },
 });
 

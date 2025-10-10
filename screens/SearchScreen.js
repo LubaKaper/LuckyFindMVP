@@ -24,9 +24,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 // Import optimized components and hooks
 import { advancedSearch, searchLabelsByReleaseCount } from '../api/discogs';
 import { Button, Dropdown, Input } from '../components';
+import { AppLogo, SearchRecordIcon, EqualizerIcon } from '../components/SophisticatedIcons';
 import { useApiRequest } from '../hooks/useApiRequest';
 import { useDebounce } from '../hooks/useDebounce';
-import { colors, spacing, typography } from '../styles/theme';
+import sophisticatedTheme from '../styles/sophisticatedTheme';
+
+const { colors, spacing, typography, shadows } = sophisticatedTheme;
 
 // ==========================================
 // STATE MANAGEMENT WITH useReducer
@@ -460,11 +463,20 @@ const OptimizedSearchScreen = () => {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Header */}
-        <Text style={styles.title}>Search Records</Text>
-        <Text style={styles.searchDescription}>
-          Search millions of records in the world's largest music database.
-        </Text>
+        {/* Header with Logo */}
+        <View style={styles.header}>
+          <AppLogo size={48} showText={true} />
+        </View>
+        
+        <View style={styles.titleSection}>
+          <SearchRecordIcon size={28} />
+          <View style={styles.titleTextContainer}>
+            <Text style={styles.title}>Discover Vinyl Records</Text>
+            <Text style={styles.searchDescription}>
+              Search millions of records in the world's largest music database
+            </Text>
+          </View>
+        </View>
         
         {/* Rate Limit Warning */}
         {showRateLimitWarning && (
@@ -493,7 +505,10 @@ const OptimizedSearchScreen = () => {
         />
 
         {/* Advanced Filters */}
-        <Text style={styles.sectionTitle}>Advanced Filters</Text>
+        <View style={styles.sectionTitle}>
+          <EqualizerIcon size={24} />
+          <Text style={styles.sectionTitleText}>Advanced Filters</Text>
+        </View>
         
         {/* Dropdown Filters */}
         {renderDropdown('genre', 'Genre', FILTER_OPTIONS.genre)}
@@ -544,48 +559,72 @@ const OptimizedSearchScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: sophisticatedTheme.colors.background,
   },
 
   scrollView: {
     flex: 1,
-    paddingHorizontal: spacing.base,
+    paddingHorizontal: sophisticatedTheme.spacing.md,
+  },
+
+  header: {
+    alignItems: 'center',
+    paddingTop: sophisticatedTheme.spacing.lg,
+    paddingBottom: sophisticatedTheme.spacing.md,
+  },
+
+  titleSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: sophisticatedTheme.colors.surface,
+    borderRadius: sophisticatedTheme.borderRadius.xl,
+    padding: sophisticatedTheme.spacing.lg,
+    marginBottom: sophisticatedTheme.spacing.xl,
+    ...sophisticatedTheme.shadows.md,
+  },
+
+  titleTextContainer: {
+    flex: 1,
+    marginLeft: sophisticatedTheme.spacing.md,
   },
 
   title: {
-    fontSize: typography.fontSize.xl,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text,
-    textAlign: 'center',
-    marginTop: spacing.lg,
-    marginBottom: spacing.sm,
+    fontSize: sophisticatedTheme.typography.fontSize['2xl'],
+    fontWeight: sophisticatedTheme.typography.fontWeight.bold,
+    color: sophisticatedTheme.colors.text,
+    marginBottom: sophisticatedTheme.spacing.xs,
   },
 
   searchDescription: {
-    fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: spacing.lg,
+    fontSize: sophisticatedTheme.typography.fontSize.sm,
+    color: sophisticatedTheme.colors.textSecondary,
+    lineHeight: sophisticatedTheme.typography.lineHeight.relaxed,
   },
 
   sectionTitle: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.semiBold,
-    color: colors.text,
-    marginTop: spacing.xl,
-    marginBottom: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: sophisticatedTheme.spacing.xl,
+    marginBottom: sophisticatedTheme.spacing.md,
+  },
+
+  sectionTitleText: {
+    fontSize: sophisticatedTheme.typography.fontSize.lg,
+    fontWeight: sophisticatedTheme.typography.fontWeight.semiBold,
+    color: sophisticatedTheme.colors.text,
+    marginLeft: sophisticatedTheme.spacing.sm,
   },
 
   searchButton: {
-    marginVertical: spacing.md,
+    marginVertical: sophisticatedTheme.spacing.md,
   },
 
   actionButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: spacing.xl,
-    marginBottom: spacing.xl,
-    gap: spacing.md,
+    marginTop: sophisticatedTheme.spacing.xl,
+    marginBottom: sophisticatedTheme.spacing.xl,
+    gap: sophisticatedTheme.spacing.md,
   },
 
   resetButton: {
@@ -598,27 +637,29 @@ const styles = StyleSheet.create({
 
   // Rate limit warning
   rateLimitWarning: {
-    backgroundColor: colors.warning || '#FFF3CD',
-    borderColor: colors.accent,
+    backgroundColor: sophisticatedTheme.colors.warning + '20',
+    borderColor: sophisticatedTheme.colors.accent,
     borderWidth: 1,
-    borderRadius: 8,
-    padding: spacing.sm,
-    marginBottom: spacing.base,
+    borderRadius: sophisticatedTheme.borderRadius.lg,
+    padding: sophisticatedTheme.spacing.md,
+    marginBottom: sophisticatedTheme.spacing.md,
+    ...sophisticatedTheme.shadows.sm,
   },
 
   rateLimitText: {
-    color: colors.warningText || '#856404',
-    fontSize: typography.fontSize.sm,
+    color: sophisticatedTheme.colors.text,
+    fontSize: sophisticatedTheme.typography.fontSize.sm,
     textAlign: 'center',
-    fontWeight: typography.fontWeight.medium,
+    fontWeight: sophisticatedTheme.typography.fontWeight.medium,
   },
 
   // Error display
   errorContainer: {
-    backgroundColor: colors.error + '20',
-    padding: spacing.sm,
-    borderRadius: 8,
-    marginTop: spacing.md,
+    backgroundColor: sophisticatedTheme.colors.error + '20',
+    padding: sophisticatedTheme.spacing.md,
+    borderRadius: sophisticatedTheme.borderRadius.lg,
+    marginTop: sophisticatedTheme.spacing.md,
+    ...sophisticatedTheme.shadows.sm,
   },
 
   errorText: {

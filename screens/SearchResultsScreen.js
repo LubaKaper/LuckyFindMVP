@@ -27,8 +27,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useApiRequest } from '../hooks/useApiRequest';
-import { colors, spacing, typography } from '../styles/theme';
+import sophisticatedTheme from '../styles/sophisticatedTheme';
 import { formatPrice } from '../utils/format';
+
+const { colors, spacing, typography, shadows } = sophisticatedTheme;
 
 // ==========================================
 // OPTIMIZED COMPONENTS

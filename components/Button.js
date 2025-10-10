@@ -27,7 +27,9 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { borderRadius, colors, shadows, spacing, typography } from '../styles/theme';
+import sophisticatedTheme from '../styles/sophisticatedTheme';
+
+const { colors, spacing, typography, shadows } = sophisticatedTheme;
 
 const Button = ({
   title,
@@ -256,7 +258,7 @@ const Button = ({
 const styles = StyleSheet.create({
   // Base button styles
   button: {
-    borderRadius: borderRadius.lg,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
@@ -264,20 +266,21 @@ const styles = StyleSheet.create({
   
   // Variant styles
   buttonPrimary: {
-    backgroundColor: colors.primary,
-    ...shadows.base,
+    backgroundColor: colors.accent,
+    ...shadows.md,
   },
   
   buttonSecondary: {
-    backgroundColor: colors.backgroundSecondary,
+    backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
+    ...shadows.sm,
   },
   
   buttonOutline: {
     backgroundColor: 'transparent',
     borderWidth: 2,
-    borderColor: colors.primary,
+    borderColor: colors.accent,
   },
   
   buttonGhost: {
@@ -293,7 +296,7 @@ const styles = StyleSheet.create({
   
   buttonMedium: {
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.base,
+    paddingVertical: spacing.md,
     minHeight: 48,
   },
   
@@ -324,11 +327,11 @@ const styles = StyleSheet.create({
   },
   
   textOutline: {
-    color: colors.primary,
+    color: colors.accent,
   },
   
   textGhost: {
-    color: colors.primary,
+    color: colors.accent,
   },
   
   // Size text styles

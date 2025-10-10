@@ -30,9 +30,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { getLabelReleases } from '../api/discogs';
 import { useApiRequest } from '../hooks/useApiRequest';
 import useNavigationAntiLoop from '../hooks/useNavigationAntiLoop';
-import { borderRadius, colors, shadows, spacing, typography } from '../styles/theme';
+import sophisticatedTheme from '../styles/sophisticatedTheme';
 import apiRequestManager from '../utils/APIRequestManager';
 import navigationStateManager from '../utils/NavigationStateManager';
+
+const { colors, spacing, typography, shadows, borderRadius } = sophisticatedTheme;
 
 const LabelReleasesScreen = () => {
   const params = useLocalSearchParams();
@@ -443,7 +445,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing.base,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.borderSecondary,
@@ -479,7 +481,7 @@ const styles = StyleSheet.create({
 
   // List
   listContent: {
-    padding: spacing.base,
+    padding: spacing.md,
   },
 
   flexContent: {
@@ -494,8 +496,8 @@ const styles = StyleSheet.create({
   // Release Cards
   releaseCard: {
     backgroundColor: colors.backgroundSecondary,
-    borderRadius: borderRadius.base,
-    marginBottom: spacing.base,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.md,
     padding: spacing.sm,
     flex: 1,
     marginHorizontal: spacing.xs,
@@ -511,13 +513,13 @@ const styles = StyleSheet.create({
   albumImage: {
     width: '100%',
     height: '100%',
-    borderRadius: borderRadius.base,
+    borderRadius: borderRadius.md,
   },
 
   placeholderImage: {
     width: '100%',
     height: '100%',
-    borderRadius: borderRadius.base,
+    borderRadius: borderRadius.md,
     backgroundColor: colors.backgroundTertiary,
     justifyContent: 'center',
     alignItems: 'center',
@@ -657,7 +659,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
-    borderRadius: borderRadius.base,
+    borderRadius: borderRadius.md,
   },
 
   retryButtonText: {

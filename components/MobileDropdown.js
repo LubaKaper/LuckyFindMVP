@@ -96,11 +96,7 @@ const MobileDropdown = ({
   }, [disabled, onToggle]);
 
   return (
-    <View style={[
-      styles.container, 
-      style,
-      { zIndex: isOpen ? 1000 : 1 } // Higher z-index when open
-    ]}>
+    <View style={[styles.container, style]}>
       {/* Label */}
       {label && (
         <Text style={styles.label}>
@@ -148,7 +144,6 @@ const MobileDropdown = ({
             style={styles.optionsList}
             showsVerticalScrollIndicator={true}
             keyboardShouldPersistTaps="handled"
-            nestedScrollEnabled={true}
           >
             {options.length > 0 ? (
               options.map((item, index) => (
@@ -180,8 +175,9 @@ const MobileDropdown = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: spacing.xl, // More space between dropdowns
+    marginBottom: spacing.base,
     position: 'relative', // Important for absolute positioning
+    zIndex: 1000, // Ensure dropdown appears above other elements
   },
 
   label: {
@@ -254,12 +250,9 @@ const styles = StyleSheet.create({
     borderColor: '#FFFF00', // Yellow border
     borderRadius: 8,
     maxHeight: 200, // Limit height
-    zIndex: 9999, // Very high z-index to appear above everything
-    elevation: 20, // High elevation for Android
-    shadowColor: '#000', // iOS shadow
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
+    zIndex: 1001, // Above container
+    elevation: 10, // Android shadow
+    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.25)', // Web shadow
   },
 
   optionsList: {

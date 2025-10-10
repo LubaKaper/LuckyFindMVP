@@ -283,32 +283,42 @@ const LabelReleasesScreen = () => {
       {/* Release Information */}
       <View style={styles.infoContainer}>
         <Text style={styles.title} numberOfLines={2}>
-          {item.title || 'Unknown Title'}
+          {Array.isArray(item.title) ? item.title.join(', ') : String(item.title || 'Unknown Title')}
         </Text>
         
         {item.artist && (
           <Text style={styles.artist} numberOfLines={1}>
-            {item.artist}
+            {Array.isArray(item.artist) ? item.artist.join(', ') : String(item.artist)}
           </Text>
         )}
         
         {item.year && (
-          <Text style={styles.year}>{item.year}</Text>
+          <Text style={styles.year}>{String(item.year)}</Text>
         )}
         
         {item.country && (
           <Text style={styles.country} numberOfLines={1}>
-            🌍 {item.country}
+            🌍 {String(item.country)}
           </Text>
         )}
         
         {((item.genres && item.genres.length > 0) || item.genre) && (
           <View style={styles.genreContainer}>
             <Text style={styles.genreText} numberOfLines={1}>
-              {item.genres && item.genres.length > 0 
-                ? item.genres[0] 
-                : (typeof item.genre === 'string' ? item.genre.split(',')[0] : item.genre)
-              }
+              {(() => {
+                if (item.genres && item.genres.length > 0) {
+                  return Array.isArray(item.genres) ? item.genres[0] : String(item.genres);
+                } else if (item.genre) {
+                  if (typeof item.genre === 'string') {
+                    return item.genre.split(',')[0];
+                  } else if (Array.isArray(item.genre)) {
+                    return String(item.genre[0] || '');
+                  } else {
+                    return String(item.genre);
+                  }
+                }
+                return '';
+              })()}
             </Text>
           </View>
         )}

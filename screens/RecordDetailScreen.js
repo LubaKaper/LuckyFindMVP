@@ -13,8 +13,9 @@
  */
 
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
+    ActivityIndicator,
     Image,
     ScrollView,
     StyleSheet,
@@ -30,6 +31,10 @@ import navigationStateManager from '../utils/NavigationStateManager';
 const RecordDetailScreen = () => {
   const params = useLocalSearchParams();
   const record = params.record ? JSON.parse(params.record) : null;
+
+  // Image loading state
+  const [imageLoading, setImageLoading] = useState(true);
+  const [imageError, setImageError] = useState(false);
 
   // Memoize record ID to prevent unnecessary re-computations
   const recordId = useMemo(() => {
@@ -101,6 +106,19 @@ const RecordDetailScreen = () => {
     });
   }, [navigateToLabel, record, recordId]);
 
+  /**
+   * Image loading handlers
+   */
+  const handleImageLoad = useCallback(() => {
+    setImageLoading(false);
+    setImageError(false);
+  }, []);
+
+  const handleImageError = useCallback(() => {
+    setImageLoading(false);
+    setImageError(true);
+  }, []);
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -115,12 +133,21 @@ const RecordDetailScreen = () => {
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Record Image */}
         <View style={styles.imageSection}>
-          {record.cover_image ? (
-            <Image
-              source={{ uri: record.cover_image }}
-              style={styles.recordImage}
-              resizeMode="cover"
-            />
+          {(record.cover_image || record.thumb) && !imageError ? (
+            <View style={styles.imageContainer}>
+              {imageLoading && (
+                <View style={styles.imageLoading}>
+                  <ActivityIndicator size="large" color={colors.primary} />
+                </View>
+              )}
+              <Image
+                source={{ uri: record.cover_image || record.thumb }}
+                style={styles.recordImage}
+                resizeMode="cover"
+                onLoad={handleImageLoad}
+                onError={handleImageError}
+              />
+            </View>
           ) : (
             <View style={styles.placeholderImage}>
               <Text style={styles.placeholderText}>♪</Text>
@@ -304,11 +331,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
+  imageContainer: {
+    position: 'relative',
+    width: 300,
+    height: 300,
+  },
+
   recordImage: {
     width: 300,
     height: 300,
     borderRadius: borderRadius.lg,
     ...shadows.md,
+  },
+
+  imageLoading: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.lg,
+    zIndex: 1,
   },
 
   placeholderImage: {

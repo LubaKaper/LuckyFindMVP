@@ -20,6 +20,7 @@ import {
     Pressable,
     StyleSheet,
     Text,
+    TextInput,
     View,
 } from 'react-native';
 
@@ -578,20 +579,23 @@ const styles = StyleSheet.create({
   // Modal Styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: spacing.base,
   },
 
   modalContent: {
-    backgroundColor: colors.surface,
+    backgroundColor: '#2a2a2a', // Use explicit color instead of theme variable
     borderRadius: 12,
     width: '100%',
     maxWidth: 400,
     maxHeight: screenHeight * 0.7,
     elevation: 10,
-    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.25)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
   },
 
   modalInner: {
@@ -605,14 +609,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: '#FFFF00', // Explicit yellow border
   },
 
   modalTitle: {
     flex: 1,
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.semiBold,
-    color: colors.text,
+    color: '#FFFFFF', // Explicit white text
   },
 
   closeButton: {
@@ -627,7 +631,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: '#FFFF00', // Yellow border
   },
 
   searchIcon: {
@@ -637,7 +641,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: typography.fontSize.base,
-    color: colors.text,
+    color: '#FFFFFF', // White text
     paddingVertical: spacing.xs,
   },
 
@@ -654,7 +658,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     height: OPTION_ITEM_HEIGHT,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: '#333333', // Dark gray border
   },
 
   optionItemLast: {
@@ -662,21 +666,21 @@ const styles = StyleSheet.create({
   },
 
   optionItemPressed: {
-    backgroundColor: colors.surfaceVariant,
+    backgroundColor: '#3a3a3a', // Light gray for pressed state
   },
 
   optionItemSelected: {
-    backgroundColor: colors.primary + '20',
+    backgroundColor: '#FFFF0033', // Yellow with transparency
   },
 
   optionText: {
     flex: 1,
     fontSize: typography.fontSize.base,
-    color: colors.text,
+    color: '#FFFFFF', // Explicit white text
   },
 
   optionTextSelected: {
-    color: colors.primary,
+    color: '#FFFF00', // Explicit yellow for selected
     fontWeight: typography.fontWeight.medium,
   },
 
@@ -694,7 +698,7 @@ const styles = StyleSheet.create({
 
   emptyText: {
     fontSize: typography.fontSize.base,
-    color: colors.textSecondary,
+    color: '#CCCCCC', // Light gray for empty text
     textAlign: 'center',
     fontStyle: 'italic',
   },

@@ -1,371 +1,530 @@
 /**
- * SearchResultsScreen Component
+ * OPTIMIZED SearchResultsScreen Implementation
  * 
- * Displays paginated search results in a 2-column grid with navigation controls.
- * Handles pagination with Previous/Next buttons and shows 30 results per page.
- * 
- * Features:
- * - Compact search header for new searches
- * - Pagination controls at top and bottom
- * - 2-column grid layout optimized for mobile
- * - Navigation to detail view
- * - Loading states and error handling
+ * Refactored with performance best practices:
+ * - React.memo for prevention of unnecessary re-renders
+ * - FlatList with windowSize and initialNumToRender optimization
+ * - useCallback for stable function references
+ * - useMemo for expensive computations  
+ * - Virtual scrolling with getItemLayout
+ * - Image lazy loading with proper cleanup
+ * - Pagination virtualization
  */
 
-import { router, useLocalSearchParams } from 'expo-router';
-import React, { useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     ActivityIndicator,
+    Dimensions,
     FlatList,
     Image,
+    Pressable,
     StyleSheet,
     Text,
-    TouchableOpacity,
-    View,
+    View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, Input } from '../components';
-import { borderRadius, colors, shadows, spacing, typography } from '../styles/theme';
 
-const SearchResultsScreen = () => {
-  const params = useLocalSearchParams();
-  const initialResults = params.initialResults ? JSON.parse(params.initialResults) : null;
-  const initialQuery = params.searchQuery || '';
-  const searchParams = params.searchParams ? JSON.parse(params.searchParams) : {};
-  
-  // State management (normalized schema)
-  const [results, setResults] = useState(initialResults?.results || []);
-  const [pagination, setPagination] = useState(initialResults?.pagination || {});
-  const [currentPage, setCurrentPage] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
-  const [searchQuery, setSearchQuery] = useState(initialQuery || '');
-  const [error, setError] = useState(null);
-  
-  // Derived state for schema compliance
-  const totalResults = pagination?.items || 0;
+import { useApiRequest } from '../hooks/useApiRequest';
+import { colors, spacing, typography } from '../styles/theme';
+import { formatPrice } from '../utils/format';
 
-  // Results per page
-  const RESULTS_PER_PAGE = 30;
+// ==========================================
+// OPTIMIZED COMPONENTS
+// ==========================================
 
-  /**
-   * Handle navigation back to search screen
-   */
-  const handleBack = () => {
-    router.back();
-  };
+/**
+ * Optimized Record Item Component with React.memo
+ * Prevents unnecessary re-renders when props haven't changed
+ */
+const OptimizedRecordItem = React.memo(({
+  record,
+  onPress,
+  index,
+}) => {
+  const [imageError, setImageError] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
 
-  /**
-   * Handle navigation to record detail
-   */
-  const handleRecordPress = (record) => {
-    console.log('Selected record:', record);
-    router.push({
-      pathname: '/record-detail',
-      params: { record: JSON.stringify(record) }
-    });
-  };
+  // Memoized image source computation
+  const imageSource = useMemo(() => {
+    const thumbnail = record.thumb || record.cover_image;
+    return thumbnail && thumbnail !== '' && !imageError
+      ? { uri: thumbnail }
+      : require('../assets/images/icon.png');
+  }, [record.thumb, record.cover_image, imageError]);
 
-  /**
-   * Perform new search
-   */
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
+  // Optimized image loading handlers
+  const handleImageLoad = useCallback(() => {
+    setImageLoading(false);
+  }, []);
 
-    setIsLoading(true);
-    setError(null);
-    setCurrentPage(1);
+  const handleImageError = useCallback(() => {
+    setImageError(true);
+    setImageLoading(false);
+  }, []);
 
-    try {
-      // Import the search function dynamically to avoid circular deps
-      const { advancedSearch } = require('../api/discogs');
-      
-      const searchParameters = {
-        ...searchParams,
-        searchQuery: searchQuery.trim(),
-        page: 1,
-        per_page: RESULTS_PER_PAGE,
-      };
+  // Memoized press handler with record data
+  const handlePress = useCallback(() => {
+    onPress(record);
+  }, [onPress, record]);
 
-      const response = await advancedSearch(searchParameters);
-      setResults(response.results || []);
-      setPagination(response.pagination || {});
-    } catch (err) {
-      console.error('❌ Search failed:', err.message);
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Memoized formatted data
+  const formattedData = useMemo(() => ({
+    title: record.title || 'Unknown Title',
+    artists: Array.isArray(record.artists) 
+      ? record.artists.map(a => a.name).join(', ')
+      : record.artist || 'Unknown Artist',
+    label: Array.isArray(record.label) 
+      ? record.label.map(l => l.name).join(', ')
+      : record.label || 'Unknown Label',
+    year: record.year ? `(${record.year})` : '',
+    format: Array.isArray(record.format) 
+      ? record.format.join(', ')
+      : record.format || 'Unknown Format',
+    genre: Array.isArray(record.genre) 
+      ? record.genre.slice(0, 2).join(', ')
+      : record.genre || 'Unknown Genre',
+    style: Array.isArray(record.style) 
+      ? record.style.slice(0, 2).join(', ')
+      : record.style || '',
+    country: record.country || 'Unknown',
+    catno: record.catno || 'N/A',
+    price: record.price ? formatPrice(record.price) : null,
+  }), [record]);
 
-  /**
-   * Load specific page
-   */
-  const loadPage = async (page) => {
-    if (isLoading || page < 1) return;
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const { advancedSearch } = require('../api/discogs');
-      
-      const searchParameters = {
-        ...searchParams,
-        searchQuery: searchQuery.trim(),
-        page: page,
-        per_page: RESULTS_PER_PAGE,
-      };
-
-      const response = await advancedSearch(searchParameters);
-      setResults(response.results || []);
-      setPagination(response.pagination || {});
-      setCurrentPage(page);
-    } catch (err) {
-      console.error('❌ Page load failed:', err.message);
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  /**
-   * Handle previous page
-   */
-  const handlePreviousPage = () => {
-    if (currentPage > 1) {
-      loadPage(currentPage - 1);
-    }
-  };
-
-  /**
-   * Handle next page
-   */
-  const handleNextPage = () => {
-    const totalPages = pagination.pages || Math.ceil((pagination.items || 0) / RESULTS_PER_PAGE);
-    if (currentPage < totalPages) {
-      loadPage(currentPage + 1);
-    }
-  };
-
-  /**
-   * Render individual result item
-   */
-  const renderResultItem = ({ item }) => (
-    <TouchableOpacity 
-      style={styles.resultCard}
-      onPress={() => handleRecordPress(item)}
-      activeOpacity={0.8}
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.recordItem,
+        pressed && styles.recordItemPressed,
+      ]}
+      onPress={handlePress}
+      accessibilityRole="button"
+      accessibilityLabel={`View details for ${formattedData.title} by ${formattedData.artists}`}
     >
-      {/* Album Art - Use normalized imageUrl first, fallback to legacy */}
+      {/* Record Image with Loading States */}
       <View style={styles.imageContainer}>
-        {(item.imageUrl || item.thumb) ? (
-          <Image
-            source={{ uri: item.imageUrl || item.thumb }}
-            style={styles.albumImage}
-            resizeMode="cover"
-          />
-        ) : (
-          <View style={styles.placeholderImage}>
-            <Text style={styles.placeholderText}>♪</Text>
+        {imageLoading && !imageError && (
+          <View style={styles.imageLoading}>
+            <ActivityIndicator size="small" color={colors.primary} />
           </View>
         )}
+        
+        <Image
+          source={imageSource}
+          style={styles.recordImage}
+          onLoad={handleImageLoad}
+          onError={handleImageError}
+          resizeMode="cover"
+          fadeDuration={200}
+        />
+        
+        {/* Item Number Badge */}
+        <View style={styles.itemBadge}>
+          <Text style={styles.itemNumber}>{index + 1}</Text>
+        </View>
       </View>
-      
+
       {/* Record Information */}
-      <View style={styles.infoContainer}>
-        {/* Title */}
-        <Text style={styles.title} numberOfLines={2}>
-          {item.title || 'Unknown Title'}
+      <View style={styles.recordInfo}>
+        {/* Title and Artists */}
+        <Text style={styles.recordTitle} numberOfLines={2}>
+          {formattedData.title}
         </Text>
         
-        {/* Artist */}
-        {item.artist && (
-          <Text style={styles.artist} numberOfLines={1}>
-            {item.artist}
-          </Text>
-        )}
-        
-        {/* Year */}
-        {item.year && (
-          <Text style={styles.year}>{item.year}</Text>
-        )}
-        
-        {/* Label - Use normalized field first, fallback to legacy */}
-        {(item.label || (item.labels && item.labels.length > 0)) && (
-          <Text style={styles.label} numberOfLines={1}>
-            📀 {item.label || item.labels[0] || ''}
-          </Text>
-        )}
-        
-        {/* Country */}
-        {item.country && (
-          <Text style={styles.country} numberOfLines={1}>
-            🌍 {item.country}
-          </Text>
-        )}
-        
-        {/* Genre - Use normalized arrays first, fallback to legacy strings */}
-        {((item.genres && item.genres.length > 0) || item.genre) && (
-          <View style={styles.genreContainer}>
-            <Text style={styles.genreText} numberOfLines={1}>
-              {item.genres && item.genres.length > 0 
-                ? item.genres[0] 
-                : (typeof item.genre === 'string' ? item.genre.split(',')[0] : item.genre)
-              }
-            </Text>
-          </View>
-        )}
-      </View>
-    </TouchableOpacity>
-  );
+        <Text style={styles.recordArtist} numberOfLines={1}>
+          {formattedData.artists}
+        </Text>
 
-  /**
-   * Render pagination controls
-   */
-  const renderPaginationControls = () => {
-    const totalPages = pagination.pages || Math.ceil((pagination.items || 0) / RESULTS_PER_PAGE);
-    const hasPrevious = currentPage > 1;
-    const hasNext = currentPage < totalPages;
+        {/* Label and Year */}
+        <Text style={styles.recordLabel} numberOfLines={1}>
+          {formattedData.label} {formattedData.year}
+        </Text>
 
-    return (
-      <View style={styles.paginationContainer}>
-        <TouchableOpacity
-          style={[styles.paginationButton, !hasPrevious && styles.disabledButton]}
-          onPress={handlePreviousPage}
-          disabled={!hasPrevious || isLoading}
-        >
-          <Text style={[styles.paginationButtonText, !hasPrevious && styles.disabledButtonText]}>
-            ← Previous
+        {/* Format and Genre */}
+        <View style={styles.recordDetails}>
+          <Text style={styles.recordFormat} numberOfLines={1}>
+            {formattedData.format}
           </Text>
-        </TouchableOpacity>
-
-        <View style={styles.pageInfo}>
-          <Text style={styles.pageText}>
-            Page {currentPage} of {totalPages}
-          </Text>
-          <Text style={styles.resultsText}>
-            {pagination.items || 0} total results
-          </Text>
+          
+          {formattedData.genre && (
+            <View style={styles.genreBadge}>
+              <Text style={styles.genreText} numberOfLines={1}>
+                {formattedData.genre}
+              </Text>
+            </View>
+          )}
         </View>
 
-        <TouchableOpacity
-          style={[styles.paginationButton, !hasNext && styles.disabledButton]}
-          onPress={handleNextPage}
-          disabled={!hasNext || isLoading}
-        >
-          <Text style={[styles.paginationButtonText, !hasNext && styles.disabledButtonText]}>
-            Next →
+        {/* Additional Info Row */}
+        <View style={styles.additionalInfo}>
+          <Text style={styles.catalogNumber}>
+            {formattedData.country} • {formattedData.catno}
           </Text>
-        </TouchableOpacity>
+          
+          {formattedData.price && (
+            <Text style={styles.recordPrice}>{formattedData.price}</Text>
+          )}
+        </View>
+      </View>
+
+      {/* Action Arrow */}
+      <View style={styles.actionContainer}>
+        <Ionicons 
+          name="chevron-forward" 
+          size={20} 
+          color={colors.textSecondary} 
+        />
+      </View>
+    </Pressable>
+  );
+});
+
+OptimizedRecordItem.displayName = 'OptimizedRecordItem';
+
+/**
+ * Optimized List Header Component
+ */
+const OptimizedListHeader = React.memo(({ 
+  resultsCount, 
+  searchQuery, 
+  onNewSearch 
+}) => (
+  <View style={styles.headerContainer}>
+    <Text style={styles.resultsCount}>
+      {resultsCount.toLocaleString()} results found
+    </Text>
+    
+    {searchQuery && (
+      <Text style={styles.searchQueryDisplay}>
+        for "{searchQuery}"
+      </Text>
+    )}
+    
+    <Pressable style={styles.newSearchButton} onPress={onNewSearch}>
+      <Ionicons name="search" size={16} color={colors.primary} />
+      <Text style={styles.newSearchText}>New Search</Text>
+    </Pressable>
+  </View>
+));
+
+OptimizedListHeader.displayName = 'OptimizedListHeader';
+
+/**
+ * Optimized List Footer Component for Loading States
+ */
+const OptimizedListFooter = React.memo(({ 
+  isLoadingMore, 
+  hasMore, 
+  onLoadMore 
+}) => {
+  if (!isLoadingMore && !hasMore) {
+    return (
+      <View style={styles.footerContainer}>
+        <Text style={styles.endOfResultsText}>
+          End of results
+        </Text>
       </View>
     );
-  };
+  }
 
-  /**
-   * Render loading state
-   */
-  const renderLoading = () => (
-    <View style={styles.loadingContainer}>
-      <ActivityIndicator size="large" color={colors.accent} />
-      <Text style={styles.loadingText}>Loading results...</Text>
-    </View>
+  if (isLoadingMore) {
+    return (
+      <View style={styles.footerContainer}>
+        <ActivityIndicator size="small" color={colors.primary} />
+        <Text style={styles.loadingMoreText}>Loading more results...</Text>
+      </View>
+    );
+  }
+
+  if (hasMore) {
+    return (
+      <Pressable style={styles.loadMoreButton} onPress={onLoadMore}>
+        <Text style={styles.loadMoreText}>Load More Results</Text>
+      </Pressable>
+    );
+  }
+
+  return null;
+});
+
+OptimizedListFooter.displayName = 'OptimizedListFooter';
+
+/**
+ * Optimized Empty State Component
+ */
+const OptimizedEmptyState = React.memo(({ onNewSearch }) => (
+  <View style={styles.emptyStateContainer}>
+    <Ionicons name="musical-notes-outline" size={64} color={colors.textSecondary} />
+    <Text style={styles.emptyStateTitle}>No Records Found</Text>
+    <Text style={styles.emptyStateText}>
+      Try adjusting your search terms or filters to find what you're looking for.
+    </Text>
+    <Pressable style={styles.newSearchButton} onPress={onNewSearch}>
+      <Text style={styles.newSearchText}>Start New Search</Text>
+    </Pressable>
+  </View>
+));
+
+OptimizedEmptyState.displayName = 'OptimizedEmptyState';
+
+// ==========================================
+// MAIN COMPONENT
+// ==========================================
+
+const OptimizedSearchResultsScreen = ({ 
+  initialResults, 
+  searchQuery, 
+  searchParams 
+}) => {
+  // State management
+  const [records, setRecords] = useState(initialResults?.results || []);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [error, setError] = useState(null);
+
+  // API and utility hooks
+  const { executeRequest } = useApiRequest();
+  
+  // Refs for performance optimization
+  const flatListRef = useRef(null);
+  const mounted = useRef(true);
+
+  // Memoized computed values
+  const pagination = useMemo(() => 
+    initialResults?.pagination || { items: 0, pages: 0, page: 1, per_page: 50 },
+    [initialResults]
   );
 
-  /**
-   * Render error state
-   */
-  const renderError = () => (
-    <View style={styles.errorContainer}>
-      <Text style={styles.errorIcon}>⚠️</Text>
-      <Text style={styles.errorText}>Search Error</Text>
-      <Text style={styles.errorMessage}>{error}</Text>
-      <Button
-        title="Try Again"
-        onPress={handleSearch}
-        style={styles.retryButton}
-      />
-    </View>
+  const hasMore = useMemo(() => 
+    currentPage < pagination.pages,
+    [currentPage, pagination.pages]
   );
 
-  /**
-   * Render empty state
-   */
-  const renderEmpty = () => (
-    <View style={styles.emptyContainer}>
-      <Text style={styles.emptyIcon}>🔍</Text>
-      <Text style={styles.emptyText}>No Results Found</Text>
-      <Text style={styles.emptyMessage}>
-        Try adjusting your search criteria
-      </Text>
-    </View>
+  const resultsCount = useMemo(() => 
+    pagination.items || records.length,
+    [pagination.items, records.length]
   );
+
+  // ==========================================
+  // OPTIMIZED EVENT HANDLERS
+  // ==========================================
+
+  /**
+   * Optimized record press handler with navigation
+   */
+  const handleRecordPress = useCallback((record) => {
+    console.log('📀 Opening record details:', record.title);
+    
+    router.push({
+      pathname: '/record-detail',
+      params: {
+        recordId: record.id.toString(),
+        record: JSON.stringify({
+          id: record.id,
+          title: record.title,
+          artists: record.artists || [{ name: record.artist || 'Unknown Artist' }],
+          year: record.year,
+          thumb: record.thumb || record.cover_image,
+          cover_image: record.cover_image || record.thumb,
+          label: record.label,
+          country: record.country,
+          format: record.format,
+          genre: record.genre,
+          style: record.style,
+          catno: record.catno,
+        })
+      }
+    });
+  }, []);
+
+  /**
+   * Optimized pagination handler with error handling
+   */
+  const handleLoadMore = useCallback(async () => {
+    if (isLoadingMore || !hasMore) return;
+
+    setIsLoadingMore(true);
+    setError(null);
+
+    try {
+      const nextPage = currentPage + 1;
+      const paginatedParams = {
+        ...JSON.parse(searchParams || '{}'),
+        page: nextPage,
+      };
+
+      console.log(`📄 Loading page ${nextPage} of search results...`);
+
+      const response = await executeRequest(async () => {
+        // Import advancedSearch here to avoid circular dependencies
+        const { advancedSearch } = require('../api/discogs');
+        return await advancedSearch(paginatedParams);
+      });
+
+      if (mounted.current && response?.results) {
+        setRecords(prevRecords => [
+          ...prevRecords,
+          ...response.results.filter(newRecord => 
+            !prevRecords.some(existingRecord => existingRecord.id === newRecord.id)
+          )
+        ]);
+        setCurrentPage(nextPage);
+        
+        console.log(`✅ Loaded ${response.results.length} more results`);
+      }
+
+    } catch (error) {
+      console.error('❌ Failed to load more results:', error);
+      if (mounted.current) {
+        setError('Failed to load more results. Please try again.');
+      }
+    } finally {
+      if (mounted.current) {
+        setIsLoadingMore(false);
+      }
+    }
+  }, [isLoadingMore, hasMore, currentPage, searchParams, executeRequest]);
+
+  /**
+   * Optimized new search navigation
+   */
+  const handleNewSearch = useCallback(() => {
+    console.log('🔍 Starting new search...');
+    router.back();
+  }, []);
+
+  // ==========================================
+  // FLATLIST OPTIMIZATION
+  // ==========================================
+
+  /**
+   * Optimized item layout calculation for better scrolling performance
+   */
+  const getItemLayout = useCallback((data, index) => ({
+    length: ITEM_HEIGHT,
+    offset: ITEM_HEIGHT * index,
+    index,
+  }), []);
+
+  /**
+   * Optimized key extractor for FlatList
+   */
+  const keyExtractor = useCallback((item) => `record-${item.id}`, []);
+
+  /**
+   * Optimized render item function with memoization
+   */
+  const renderItem = useCallback(({ item, index }) => (
+    <OptimizedRecordItem
+      record={item}
+      onPress={handleRecordPress}
+      index={index}
+    />
+  ), [handleRecordPress]);
+
+  /**
+   * Memoized list header
+   */
+  const listHeader = useMemo(() => (
+    <OptimizedListHeader
+      resultsCount={resultsCount}
+      searchQuery={searchQuery}
+      onNewSearch={handleNewSearch}
+    />
+  ), [resultsCount, searchQuery, handleNewSearch]);
+
+  /**
+   * Memoized list footer
+   */
+  const listFooter = useMemo(() => (
+    <OptimizedListFooter
+      isLoadingMore={isLoadingMore}
+      hasMore={hasMore}
+      onLoadMore={handleLoadMore}
+    />
+  ), [isLoadingMore, hasMore, handleLoadMore]);
+
+  // ==========================================
+  // LIFECYCLE MANAGEMENT
+  // ==========================================
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+
+  // ==========================================
+  // RENDER
+  // ==========================================
+
+  if (records.length === 0) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <OptimizedEmptyState onNewSearch={handleNewSearch} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <Text style={styles.backButtonText}>← Search</Text>
-        </TouchableOpacity>
+      <FlatList
+        ref={flatListRef}
+        data={records}
+        renderItem={renderItem}
+        keyExtractor={keyExtractor}
+        getItemLayout={getItemLayout}
         
-        <View style={styles.searchContainer}>
-          <Input
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholder="Search records, artists, albums..."
-            autoCapitalize="none"
-            autoCorrect={false}
-            returnKeyType="search"
-            onSubmitEditing={handleSearch}
-            style={styles.searchInput}
-          />
-          <Button
-            title="Search"
-            onPress={handleSearch}
-            disabled={isLoading || !searchQuery.trim()}
-            style={styles.searchButton}
-          />
-        </View>
-      </View>
+        // Performance Optimizations
+        windowSize={10}
+        initialNumToRender={8}
+        maxToRenderPerBatch={5}
+        updateCellsBatchingPeriod={50}
+        removeClippedSubviews={true}
+        
+        // Header and Footer
+        ListHeaderComponent={listHeader}
+        ListFooterComponent={listFooter}
+        
+        // Pagination
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.3}
+        
+        // Styling
+        style={styles.flatList}
+        contentContainerStyle={styles.flatListContent}
+        showsVerticalScrollIndicator={false}
+        
+        // Accessibility
+        accessibilityRole="list"
+        accessibilityLabel={`Search results list with ${resultsCount} records`}
+      />
 
-      {/* Content */}
-      {isLoading && results.length === 0 ? (
-        renderLoading()
-      ) : error ? (
-        renderError()
-      ) : results.length === 0 ? (
-        renderEmpty()
-      ) : (
-        <View style={styles.content}>
-          {/* Top Pagination */}
-          {renderPaginationControls()}
-          
-          {/* Results Grid */}
-          <FlatList
-            key="search-results-grid"
-            data={results}
-            renderItem={renderResultItem}
-            keyExtractor={(item, index) => `${item.id}-${index}`}
-            numColumns={2}
-            columnWrapperStyle={styles.row}
-            contentContainerStyle={styles.listContent}
-            showsVerticalScrollIndicator={false}
-          />
-          
-          {/* Bottom Pagination */}
-          {renderPaginationControls()}
-        </View>
-      )}
-      
-      {/* Loading Overlay */}
-      {isLoading && results.length > 0 && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color={colors.accent} />
+      {/* Error Display */}
+      {error && (
+        <View style={styles.errorBanner}>
+          <Text style={styles.errorText}>{error}</Text>
+          <Pressable 
+            style={styles.errorDismiss}
+            onPress={() => setError(null)}
+          >
+            <Ionicons name="close" size={16} color={colors.error} />
+          </Pressable>
         </View>
       )}
     </SafeAreaView>
   );
 };
+
+// ==========================================
+// CONSTANTS AND STYLES
+// ==========================================
+
+const { width: screenWidth } = Dimensions.get('window');
+const ITEM_HEIGHT = 120; // Fixed item height for getItemLayout optimization
 
 const styles = StyleSheet.create({
   container: {
@@ -373,274 +532,264 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
 
-  // Header
-  header: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSecondary,
-    gap: spacing.sm,
-  },
-
-  backButton: {
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-  },
-
-  backButtonText: {
-    color: colors.accent,
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.medium,
-  },
-
-  searchContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-
-  searchInput: {
+  flatList: {
     flex: 1,
   },
 
-  searchButton: {
-    minWidth: 80,
+  flatListContent: {
+    paddingBottom: spacing.xl,
   },
 
-  // Content
-  content: {
-    flex: 1,
-  },
-
-  // Pagination
-  paginationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSecondary,
-  },
-
-  paginationButton: {
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.base,
-    backgroundColor: colors.accent,
-    minWidth: 80,
-  },
-
-  disabledButton: {
-    backgroundColor: colors.backgroundSecondary,
-  },
-
-  paginationButtonText: {
-    color: colors.background,
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.semiBold,
-    textAlign: 'center',
-  },
-
-  disabledButtonText: {
-    color: colors.textSecondary,
-  },
-
-  pageInfo: {
-    alignItems: 'center',
-  },
-
-  pageText: {
-    color: colors.text,
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-  },
-
-  resultsText: {
-    color: colors.textSecondary,
-    fontSize: typography.fontSize.xs,
-    marginTop: 2,
-  },
-
-  // Results Grid
-  listContent: {
+  // Header Styles
+  headerContainer: {
     padding: spacing.base,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    alignItems: 'center',
   },
 
-  row: {
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.xs,
+  resultsCount: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
 
-  resultCard: {
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: borderRadius.base,
-    marginBottom: spacing.base,
-    padding: spacing.sm,
-    flex: 1,
-    marginHorizontal: spacing.xs,
-    ...shadows.sm,
-  },
-
-  // Image
-  imageContainer: {
-    width: '100%',
-    aspectRatio: 1,
+  searchQueryDisplay: {
+    fontSize: typography.fontSize.sm,
+    color: colors.textSecondary,
+    fontStyle: 'italic',
     marginBottom: spacing.sm,
   },
 
-  albumImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: borderRadius.base,
-  },
-
-  placeholderImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: borderRadius.base,
-    backgroundColor: colors.backgroundTertiary,
-    justifyContent: 'center',
+  newSearchButton: {
+    flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    backgroundColor: colors.primary + '20',
+    borderRadius: 16,
+    gap: spacing.xs,
   },
 
-  placeholderText: {
-    fontSize: typography.fontSize.xl,
-    color: colors.textSecondary,
-  },
-
-  // Info
-  infoContainer: {
-    flex: 1,
-  },
-
-  title: {
+  newSearchText: {
     fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.semiBold,
-    color: colors.text,
-    marginBottom: spacing.xs,
-  },
-
-  artist: {
-    fontSize: typography.fontSize.xs,
+    color: colors.primary,
     fontWeight: typography.fontWeight.medium,
-    color: colors.accent,
-    marginBottom: spacing.xs,
   },
 
-  year: {
-    fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
+  // Record Item Styles
+  recordItem: {
+    flexDirection: 'row',
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    height: ITEM_HEIGHT,
   },
 
-  label: {
-    fontSize: typography.fontSize.xs,
-    color: colors.accent,
-    marginBottom: spacing.xs,
-    opacity: 0.9,
+  recordItemPressed: {
+    backgroundColor: colors.surfaceVariant,
   },
 
-  country: {
-    fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
+  imageContainer: {
+    position: 'relative',
+    marginRight: spacing.sm,
   },
 
-  genreContainer: {
-    backgroundColor: colors.backgroundTertiary,
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 2,
-    borderRadius: borderRadius.sm,
-    alignSelf: 'flex-start',
+  recordImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    backgroundColor: colors.surfaceVariant,
   },
 
-  genreText: {
-    fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
-  },
-
-  // States
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: spacing.xl,
-  },
-
-  loadingText: {
-    color: colors.textSecondary,
-    fontSize: typography.fontSize.base,
-    marginTop: spacing.md,
-  },
-
-  loadingOverlay: {
+  imageLoading: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
     justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.surfaceVariant,
+    borderRadius: 8,
+    zIndex: 1,
+  },
+
+  itemBadge: {
+    position: 'absolute',
+    top: -8,
+    left: -8,
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+    minWidth: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: colors.surface,
+  },
+
+  itemNumber: {
+    fontSize: 12,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.surface,
+  },
+
+  recordInfo: {
+    flex: 1,
+    justifyContent: 'space-between',
+    paddingVertical: 4,
+  },
+
+  recordTitle: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semiBold,
+    color: colors.text,
+    lineHeight: 20,
+  },
+
+  recordArtist: {
+    fontSize: typography.fontSize.sm,
+    color: colors.textSecondary,
+    fontWeight: typography.fontWeight.medium,
+  },
+
+  recordLabel: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textSecondary,
+  },
+
+  recordDetails: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+
+  recordFormat: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textSecondary,
+    flex: 1,
+  },
+
+  genreBadge: {
+    backgroundColor: colors.accent + '30',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+
+  genreText: {
+    fontSize: 10,
+    color: colors.accent,
+    fontWeight: typography.fontWeight.medium,
+  },
+
+  additionalInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
 
-  errorContainer: {
+  catalogNumber: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textSecondary,
+    flex: 1,
+  },
+
+  recordPrice: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.success || colors.primary,
+  },
+
+  actionContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingLeft: spacing.sm,
+  },
+
+  // Footer Styles
+  footerContainer: {
+    padding: spacing.base,
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+
+  loadingMoreText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.textSecondary,
+  },
+
+  endOfResultsText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.textSecondary,
+    fontStyle: 'italic',
+  },
+
+  loadMoreButton: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
+    borderRadius: 8,
+    margin: spacing.base,
+    alignItems: 'center',
+  },
+
+  loadMoreText: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.surface,
+  },
+
+  // Empty State Styles
+  emptyStateContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: spacing.xl,
+    paddingHorizontal: spacing.xl,
+    gap: spacing.base,
   },
 
-  errorIcon: {
-    fontSize: 48,
-    marginBottom: spacing.md,
+  emptyStateTitle: {
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
+    textAlign: 'center',
+  },
+
+  emptyStateText: {
+    fontSize: typography.fontSize.base,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+
+  // Error Styles
+  errorBanner: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: colors.error,
+    padding: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
 
   errorText: {
-    color: colors.error,
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.semiBold,
-    marginBottom: spacing.sm,
-  },
-
-  errorMessage: {
-    color: colors.textSecondary,
-    fontSize: typography.fontSize.base,
-    textAlign: 'center',
-    marginBottom: spacing.lg,
-  },
-
-  retryButton: {
-    minWidth: 120,
-  },
-
-  emptyContainer: {
+    fontSize: typography.fontSize.sm,
+    color: colors.surface,
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: spacing.xl,
   },
 
-  emptyIcon: {
-    fontSize: 48,
-    marginBottom: spacing.md,
-  },
-
-  emptyText: {
-    color: colors.text,
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.semiBold,
-    marginBottom: spacing.sm,
-  },
-
-  emptyMessage: {
-    color: colors.textSecondary,
-    fontSize: typography.fontSize.base,
-    textAlign: 'center',
+  errorDismiss: {
+    padding: spacing.xs,
   },
 });
 
-export default SearchResultsScreen;
+export default OptimizedSearchResultsScreen;

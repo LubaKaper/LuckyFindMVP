@@ -318,15 +318,16 @@ const OptimizedSearchResultsScreen = ({
     console.log('📀 Opening record details:', record.title);
     
     router.push({
-      pathname: '/record-details',
+      pathname: '/record-detail',
       params: {
         recordId: record.id.toString(),
-        recordData: JSON.stringify({
+        record: JSON.stringify({
           id: record.id,
           title: record.title,
           artists: record.artists || [{ name: record.artist || 'Unknown Artist' }],
           year: record.year,
           thumb: record.thumb || record.cover_image,
+          cover_image: record.cover_image || record.thumb,
           label: record.label,
           country: record.country,
           format: record.format,

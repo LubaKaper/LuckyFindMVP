@@ -32,6 +32,13 @@ export const colors = {
   warning: '#FF9800',
   error: '#F44336',
   info: '#2196F3',
+  
+  // Surface colors for cards, modals, dropdowns
+  surface: '#1a1a1a', // Dark surface for modal backgrounds
+  surfaceVariant: '#2a2a2a', // Lighter surface for hover states
+  
+  // Disabled states
+  disabled: '#666666', // Gray for disabled elements
 };
 
 // Typography scale

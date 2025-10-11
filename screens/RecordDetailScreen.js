@@ -19,26 +19,25 @@
  */
 
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import React, { useCallback, useMemo, useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-    ActivityIndicator,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-    Dimensions,
-    Linking,
-    Platform,
+  ActivityIndicator,
+  Dimensions,
+  Image,
+  Linking,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { WebView } from 'react-native-webview';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { WebView } from 'react-native-webview';
+import { getReleaseDetails } from '../api/discogs';
 import useNavigationAntiLoop from '../hooks/useNavigationAntiLoop';
 import sophisticatedTheme from '../styles/sophisticatedTheme';
 import navigationStateManager from '../utils/NavigationStateManager';
-import { getReleaseDetails } from '../api/discogs';
-import { isYouTubeApiAvailable } from '../api/youtube';
 
 const { colors, spacing, typography, shadows, borderRadius } = sophisticatedTheme;
 const { width } = Dimensions.get('window');
